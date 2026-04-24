@@ -486,7 +486,7 @@
             <div class="form-grid">
                 <!-- Supplier dengan dropdown + tombol tambah -->
                 <div class="input-group">
-                    <label>🏭 Nama Supplier <span>Dropdown + Tambah</span></label>
+                    <label>🏭 Nama Supplier </label>
                     <div class="select-with-add">
                         <select id="supplierSelect" required>
                             <option value="" disabled selected>-- Pilih Supplier --</option>
@@ -502,7 +502,7 @@
 
                 <!-- Nama Barang dengan dropdown + tombol tambah -->
                 <div class="input-group">
-                    <label>📦 Nama Barang <span>Dropdown + Tambah</span></label>
+                    <label>📦 Nama Barang </label>
                     <div class="select-with-add">
                         <select id="barangSelect" required>
                             <option value="" disabled selected>-- Pilih Barang --</option>
@@ -542,7 +542,7 @@
 
                 <!-- Satuan dengan dropdown + tombol tambah -->
                 <div class="input-group">
-                    <label>📏 Satuan <span>Dropdown + Tambah</span></label>
+                    <label>📏 Satuan </label>
                     <div class="select-with-add">
                         <select id="unitSelect" required>
                             <option value="" disabled selected>-- Pilih Satuan --</option>
