@@ -420,7 +420,7 @@
 <div class="app-container">
     <div class="main-header">
         <h1>Sistem Pencatatan Barang Masuk</h1>
-        <p>Kelola penerimaan barang | Dropdown pilihan Supplier, Barang & Satuan | Export Excel</p>
+        <p>Kelola penerimaan barang</p>
     </div>
 
     <div class="form-card">
