@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Sistem Input Barang Masuk | Per Bulan + Pagination</title>
+    <title>Sistem Input Barang Masuk | AutoComplete + Per Bulan</title>
     <!-- SheetJS library untuk export Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <style>
@@ -78,6 +78,13 @@
             font-size: 0.75rem;
             color: #1e293b;
             letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .input-group label i {
+            font-size: 1rem;
         }
 
         .input-group input,
@@ -95,6 +102,11 @@
             outline: none;
             border-color: #2c6e9e;
             box-shadow: 0 0 0 3px rgba(44,110,158,0.15);
+        }
+
+        /* Style untuk datalist */
+        datalist {
+            background: white;
         }
 
         .btn-group {
@@ -405,13 +417,21 @@
             th, td { font-size: 0.7rem; padding: 6px 4px; }
             .edit-btn, .delete-btn { padding: 2px 4px; font-size: 0.9rem; }
         }
+
+        /* Saran otomatis */
+        .autocomplete-hint {
+            font-size: 0.7rem;
+            color: #6c757d;
+            margin-top: 2px;
+            margin-left: 12px;
+        }
     </style>
 </head>
 <body>
 <div class="app-container">
     <div class="main-header">
         <h1>Sistem Pencatatan Barang Masuk</h1>
-        <p>Kelola penerimaan barang</p>
+        <p>Input jadi lebih mudah dengan saran otomatis (AutoComplete) | Kelola per bulan</p>
     </div>
 
     <!-- FORM TAMBAH / EDIT -->
@@ -419,12 +439,16 @@
         <form id="barangForm">
             <div class="form-grid">
                 <div class="input-group">
-                    <label>🏭 Supplier</label>
-                    <input type="text" id="supplier" placeholder="Nama supplier" required>
+                    <label>🏭 Nama Supplier <i>(auto-saran)</i></label>
+                    <input type="text" id="supplier" list="supplierList" placeholder="Ketik atau pilih supplier" autocomplete="off" required>
+                    <datalist id="supplierList"></datalist>
+                    <div class="autocomplete-hint">💡 Akan muncul saran dari data tersimpan</div>
                 </div>
                 <div class="input-group">
-                    <label>📦 Nama Barang</label>
-                    <input type="text" id="namaBarang" placeholder="Nama produk" required>
+                    <label>📦 Nama Barang <i>(auto-saran)</i></label>
+                    <input type="text" id="namaBarang" list="barangList" placeholder="Ketik atau pilih barang" autocomplete="off" required>
+                    <datalist id="barangList"></datalist>
+                    <div class="autocomplete-hint">💡 Otomatis menyimpan data baru</div>
                 </div>
                 <div class="input-group">
                     <label>🏷️ Kategori</label>
@@ -442,22 +466,24 @@
                     <input type="number" id="jumlah" placeholder="0" min="1" required>
                 </div>
                 <div class="input-group">
-                    <label>📏 Satuan</label>
-                    <input type="text" id="unit" placeholder="pcs, box, kg" required>
+                    <label>📏 Satuan <i>(auto-saran)</i></label>
+                    <input type="text" id="unit" list="unitList" placeholder="pcs, box, kg, roll" autocomplete="off" required>
+                    <datalist id="unitList"></datalist>
+                    <div class="autocomplete-hint">💡 pcs, box, kg, roll, dll</div>
                 </div>
                 <div class="input-group">
                     <label>📅 Tanggal Masuk</label>
                     <input type="date" id="tanggalMasuk" required>
                 </div>
                 <div class="input-group">
-                    <label>📝 Catatan</label>
-                    <input type="text" id="catatan" placeholder="Opsional">
+                    <label>📝 Catatan / No. PO</label>
+                    <input type="text" id="catatan" placeholder="Opsional: PO-123 / INV-xxx">
                 </div>
             </div>
             <div class="btn-group">
-                <button type="submit" class="btn btn-primary" id="submitBtn">Tambah Barang</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">➕ Tambah Barang</button>
                 <button type="button" id="resetFormBtn" class="btn btn-secondary">🗑️ Reset Form</button>
-                <button type="button" id="cancelEditBtn" class="btn btn-secondary" style="display:none;">Batalkan Edit</button>
+                <button type="button" id="cancelEditBtn" class="btn btn-secondary" style="display:none;">✖️ Batalkan Edit</button>
             </div>
         </form>
     </div>
@@ -495,7 +521,7 @@
                 <label>🗓️ Filter Bulan</label>
                 <input type="month" id="filterBulan" placeholder="Pilih bulan">
             </div>
-            <button id="clearFilterBtn" class="btn-reset-filter">Reset Filter</button>
+            <button id="clearFilterBtn" class="btn-reset-filter">✖️ Reset Filter</button>
         </div>
 
         <div id="infoFilter" class="info-search"></div>
@@ -514,7 +540,7 @@
         <!-- PAGINATION -->
         <div class="pagination" id="paginationContainer"></div>
     </div>
-    <footer>📌 Data disimpan storage.</footer>
+    <footer>📌 Fitur AutoComplete pada Supplier, Nama Barang, dan Satuan akan belajar dari input Anda. Data tersimpan otomatis.</footer>
     <div id="toastMessage" class="toast-msg"></div>
 </div>
 
@@ -553,6 +579,11 @@
     const toastMsgDiv = document.getElementById('toastMessage');
     const paginationContainer = document.getElementById('paginationContainer');
 
+    // Datalist elements
+    const supplierDatalist = document.getElementById('supplierList');
+    const barangDatalist = document.getElementById('barangList');
+    const unitDatalist = document.getElementById('unitList');
+
     function showToast(message, isError = false) {
         toastMsgDiv.textContent = message;
         toastMsgDiv.style.backgroundColor = isError ? '#b91c1c' : '#0f2b3d';
@@ -570,6 +601,23 @@
         }
     }
 
+    // ========== UPDATE DATALIST (AutoComplete) dari data inventory ==========
+    function updateDatalists() {
+        // Kumpulkan semua supplier unik
+        const suppliers = [...new Set(inventory.map(item => item.supplier).filter(s => s && s.trim()))];
+        supplierDatalist.innerHTML = suppliers.map(s => `<option value="${escapeHtml(s)}">`).join('');
+        
+        // Kumpulkan semua nama barang unik
+        const barang = [...new Set(inventory.map(item => item.namaBarang).filter(b => b && b.trim()))];
+        barangDatalist.innerHTML = barang.map(b => `<option value="${escapeHtml(b)}">`).join('');
+        
+        // Kumpulkan semua satuan unik + default satuan umum
+        const unitsFromData = [...new Set(inventory.map(item => item.unit).filter(u => u && u.trim()))];
+        const defaultUnits = ['pcs', 'box', 'kg', 'roll', 'set', 'pack', 'lembar', 'meter', 'liter'];
+        const allUnits = [...new Set([...defaultUnits, ...unitsFromData])];
+        unitDatalist.innerHTML = allUnits.map(u => `<option value="${escapeHtml(u)}">`).join('');
+    }
+
     function loadData() {
         const stored = localStorage.getItem('inventory_barang_masuk');
         if (stored) {
@@ -578,13 +626,16 @@
                 if (!Array.isArray(inventory)) inventory = [];
             } catch(e) { inventory = []; }
         } else {
+            // Data contoh untuk demonstrasi
             inventory = [];
         }
+        updateDatalists();
         applyFilters();
     }
 
     function saveData() {
         localStorage.setItem('inventory_barang_masuk', JSON.stringify(inventory));
+        updateDatalists(); // Update datalist setiap kali data berubah
     }
 
     function formatDate(dateStr) {
@@ -609,6 +660,8 @@
             if (m === '<') return '&lt;';
             if (m === '>') return '&gt;';
             return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
         });
     }
 
@@ -665,7 +718,7 @@
         // Group data berdasarkan bulan-tahun
         const grouped = {};
         filteredInventory.forEach(item => {
-            const monthYearKey = item.tanggalMasuk.substring(0, 7); // YYYY-MM
+            const monthYearKey = item.tanggalMasuk.substring(0, 7);
             const monthYearDisplay = getMonthYear(item.tanggalMasuk);
             if (!grouped[monthYearKey]) {
                 grouped[monthYearKey] = { display: monthYearDisplay, items: [] };
@@ -675,9 +728,9 @@
 
         // Buat array flat dengan separator bulan
         let flatRows = [];
-        const groupKeys = Object.keys(grouped).sort().reverse(); // terbaru dulu
+        const groupKeys = Object.keys(grouped).sort().reverse();
         groupKeys.forEach(key => {
-            flatRows.push({ type: 'month-header', monthDisplay: grouped[key].display, monthKey: key });
+            flatRows.push({ type: 'month-header', monthDisplay: grouped[key].display, monthKey: key, count: grouped[key].items.length });
             grouped[key].items.forEach(item => {
                 flatRows.push({ type: 'data', item: item });
             });
@@ -693,7 +746,7 @@
         let html = '';
         for (const row of paginatedRows) {
             if (row.type === 'month-header') {
-                html += `<tr class="month-group"><td colspan="8"><strong>📅 ${escapeHtml(row.monthDisplay)}</strong> (${grouped[row.monthKey].items.length} item)</td></tr>`;
+                html += `<tr class="month-group"><td colspan="8"><strong>📅 ${escapeHtml(row.monthDisplay)}</strong> (${row.count} item)</td></tr>`;
             } else {
                 const item = row.item;
                 html += `
@@ -731,7 +784,6 @@
             });
         });
 
-        // Render pagination controls
         renderPaginationControls(totalPages);
     }
 
@@ -744,7 +796,6 @@
         btnHtml += `<button class="page-btn" id="firstPage" ${currentPage === 1 ? 'disabled' : ''}>« Pertama</button>`;
         btnHtml += `<button class="page-btn" id="prevPage" ${currentPage === 1 ? 'disabled' : ''}>‹ Sebelum</button>`;
         
-        // Tampilkan beberapa nomor halaman
         let startPage = Math.max(1, currentPage - 2);
         let endPage = Math.min(totalPages, currentPage + 2);
         for (let i = startPage; i <= endPage; i++) {
@@ -757,7 +808,6 @@
         
         paginationContainer.innerHTML = btnHtml;
         
-        // Pasang event
         document.getElementById('firstPage')?.addEventListener('click', () => { currentPage = 1; renderTableWithPagination(); });
         document.getElementById('prevPage')?.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderTableWithPagination(); } });
         document.getElementById('nextPage')?.addEventListener('click', () => { if (currentPage < totalPages) { currentPage++; renderTableWithPagination(); } });
@@ -791,7 +841,7 @@
         submitBtn.textContent = '✏️ Simpan Perubahan';
         submitBtn.classList.add('btn-edit-mode');
         cancelEditBtn.style.display = 'inline-block';
-        showToast('✏️ Mode Edit aktif', false);
+        showToast('✏️ Mode Edit aktif - ubah data', false);
         document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
     }
 
@@ -799,7 +849,7 @@
         editMode = false;
         editingId = null;
         resetFormFields();
-        submitBtn.textContent = 'Tambah Barang';
+        submitBtn.textContent = '➕ Tambah Barang';
         submitBtn.classList.remove('btn-edit-mode');
         cancelEditBtn.style.display = 'none';
         showToast('Mode Edit dibatalkan', false);
@@ -865,7 +915,7 @@
             rowsHtml += `<tr><td>${escapeHtml(item.supplier)}</td><td>${escapeHtml(item.namaBarang)}</td><td>${escapeHtml(item.kategori)}</td><td style="text-align:right">${item.jumlah}</td><td>${escapeHtml(item.unit)}</td><td>${formatDate(item.tanggalMasuk)}</td><td>${escapeHtml(item.catatan) || '-'}</td></tr>`;
         });
         const printWindow = window.open('', '_blank');
-        printWindow.document.write(`<html><head><title>Laporan Barang Masuk</title><style>body{font-family:Arial;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:8px;text-align:left}th{background:#eef2f5}</style></head><body><h2>📋 Laporan Penerimaan Barang</h2><p>Tanggal cetak: ${new Date().toLocaleString('id-ID')} | Total: ${filteredInventory.length}</p><table><thead><tr><th>Supplier</th><th>Nama Barang</th><th>Kategori</th><th>Jumlah</th><th>Satuan</th><th>Tgl Masuk</th><th>Catatan</th></tr></thead><tbody>${rowsHtml}</tbody></table></body></html>`);
+        printWindow.document.write(`<html><head><title>Laporan Barang Masuk</title><style>body{font-family:Arial;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:8px;text-align:left}th{background:#eef2f5}</style></head><body><h2>📋 Laporan Penerimaan Barang</h2><p>Tanggal cetak: ${new Date().toLocaleString('id-ID')} | Total: ${filteredInventory.length}</p> <table><thead><tr><th>Supplier</th><th>Nama Barang</th><th>Kategori</th><th>Jumlah</th><th>Satuan</th><th>Tgl Masuk</th><th>Catatan</th></tr></thead><tbody>${rowsHtml}</tbody></table></body></html>`);
         printWindow.document.close();
         printWindow.print();
     }
