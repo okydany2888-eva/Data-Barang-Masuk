@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Sistem Input Barang Masuk | Inventory + Dropdown Pilihan + Excel</title>
+    <title>Sistem Input Barang Masuk | Inventory</title>
     <!-- SheetJS library untuk export Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <style>
@@ -484,7 +484,7 @@
                 </div>
             </div>
             <div class="btn-group">
-                <button type="submit" class="btn btn-primary" id="submitBtn">➕ Tambah Barang</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">Tambah Barang</button>
                 <button type="button" id="resetFormBtn" class="btn btn-secondary">🗑️ Reset Form</button>
                 <button type="button" id="cancelEditBtn" class="btn btn-secondary" style="display:none;">✖️ Batalkan Edit</button>
             </div>
