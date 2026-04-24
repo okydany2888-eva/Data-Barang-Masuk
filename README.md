@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Sistem Input Barang Masuk | Inventory Management + Edit + Excel</title>
+    <title>Sistem Input Barang Masuk | Inventory + Dropdown Pilihan + Excel</title>
     <!-- SheetJS library untuk export Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <style>
@@ -19,13 +19,11 @@
             min-height: 100vh;
         }
 
-        /* Container Utama */
         .app-container {
             max-width: 1400px;
             margin: 0 auto;
         }
 
-        /* Header */
         .main-header {
             background: linear-gradient(135deg, #0f2b3d 0%, #1a3a4f 100%);
             color: white;
@@ -53,7 +51,6 @@
             margin-top: 6px;
         }
 
-        /* Kartu Form */
         .form-card {
             background: white;
             padding: 24px 28px;
@@ -79,6 +76,68 @@
             font-size: 0.8rem;
             color: #1e293b;
             letter-spacing: 0.3px;
+        }
+
+        /* Styling untuk combobox + input hybrid */
+        .hybrid-input {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .hybrid-input input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 14px;
+            font-size: 0.9rem;
+            background: #fafcff;
+        }
+        .hybrid-input input:focus {
+            outline: none;
+            border-color: #2c6e9e;
+            box-shadow: 0 0 0 3px rgba(44,110,158,0.15);
+        }
+        .dropdown-btn {
+            position: absolute;
+            right: 8px;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 30px;
+            padding: 4px 10px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: #334155;
+            transition: 0.2s;
+        }
+        .dropdown-btn:hover {
+            background: #e2e8f0;
+        }
+        .dropdown-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .dropdown-list.show {
+            display: block;
+        }
+        .dropdown-list div {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: 0.1s;
+        }
+        .dropdown-list div:hover {
+            background: #eef2ff;
         }
 
         .input-group input,
@@ -146,7 +205,6 @@
             color: white;
         }
 
-        /* Section Data */
         .data-section {
             background: white;
             border-radius: 24px;
@@ -205,7 +263,6 @@
             background: #eef2ff;
         }
 
-        /* Filter Panel */
         .filter-panel {
             background: #f9fbfd;
             padding: 16px 20px;
@@ -250,7 +307,6 @@
             font-size: 0.75rem;
         }
 
-        /* Tabel */
         .table-wrapper {
             overflow-x: auto;
             border-radius: 18px;
@@ -328,7 +384,6 @@
             margin-bottom: 12px;
         }
 
-        /* Notifikasi */
         .toast-msg {
             position: fixed;
             bottom: 20px;
@@ -365,20 +420,29 @@
 <div class="app-container">
     <div class="main-header">
         <h1>Sistem Pencatatan Barang Masuk</h1>
-        <p>Kelola penerimaan barang dari supplier | Export ke Excel (XLSX) | Edit Data</p>
+        <p>Kelola penerimaan barang | Dropdown pilihan Supplier, Barang & Satuan | Export Excel</p>
     </div>
 
-    <!-- FORM TAMBAH / EDIT -->
     <div class="form-card">
         <form id="barangForm">
             <div class="form-grid">
+                <!-- Supplier dengan dropdown pilihan -->
                 <div class="input-group">
                     <label>🏭 Nama Supplier *</label>
-                    <input type="text" id="supplier" placeholder="Contoh: PT, CV" required>
+                    <div class="hybrid-input" id="supplierWrapper">
+                        <input type="text" id="supplier" placeholder="Pilih atau ketik supplier" autocomplete="off" required>
+                        <button type="button" class="dropdown-btn" data-target="supplier">▼</button>
+                        <div class="dropdown-list" id="supplierDropdown"></div>
+                    </div>
                 </div>
+                <!-- Nama Barang dengan dropdown pilihan -->
                 <div class="input-group">
                     <label>📦 Nama Barang *</label>
-                    <input type="text" id="namaBarang" placeholder="Nama produk / material" required>
+                    <div class="hybrid-input" id="barangWrapper">
+                        <input type="text" id="namaBarang" placeholder="Pilih atau ketik nama barang" autocomplete="off" required>
+                        <button type="button" class="dropdown-btn" data-target="barang">▼</button>
+                        <div class="dropdown-list" id="barangDropdown"></div>
+                    </div>
                 </div>
                 <div class="input-group">
                     <label>🏷️ Kategori *</label>
@@ -401,9 +465,14 @@
                     <label>🔢 Jumlah *</label>
                     <input type="number" id="jumlah" placeholder="0" min="1" required>
                 </div>
+                <!-- Satuan dengan dropdown pilihan -->
                 <div class="input-group">
                     <label>📏 Satuan *</label>
-                    <input type="text" id="unit" placeholder="pcs, box, kg, roll" required>
+                    <div class="hybrid-input" id="unitWrapper">
+                        <input type="text" id="unit" placeholder="Pilih atau ketik satuan" autocomplete="off" required>
+                        <button type="button" class="dropdown-btn" data-target="unit">▼</button>
+                        <div class="dropdown-list" id="unitDropdown"></div>
+                    </div>
                 </div>
                 <div class="input-group">
                     <label>📅 Tanggal Masuk *</label>
@@ -422,7 +491,6 @@
         </form>
     </div>
 
-    <!-- SECTION DATA & TABEL -->
     <div class="data-section">
         <div class="section-header">
             <div class="title-badge">
@@ -431,7 +499,7 @@
             </div>
             <div class="aksi-buttons">
                 <button id="printBtn" class="small-icon-btn">🖨️ Cetak</button>
-                <button id="exportExcelBtn" class="small-icon-btn">📎 Export Excel (XLSX)</button>
+                <button id="exportExcelBtn" class="small-icon-btn">📎 Export Excel</button>
             </div>
         </div>
 
@@ -477,7 +545,7 @@
             </table>
         </div>
     </div>
-    <footer>📌 Data disimpan secara lokal. Klik ✏️ untuk edit, 🗑️ hapus. Export Excel akan menghasilkan file .xlsx berdasarkan data tampil/filter.</footer>
+    <footer>📌 Data tersimpan lokal. Supplier, Nama Barang, Satuan memiliki daftar pilihan + bisa input manual.</footer>
     <div id="toastMessage" class="toast-msg"></div>
 </div>
 
@@ -488,13 +556,18 @@
     let editMode = false;
     let editingId = null;
 
+    // Data master untuk pilihan dropdown (bisa ditambah dinamis dari riwayat)
+    let masterSuppliers = ["PT. ABC Indonesia", "CV. Maju Jaya", "UD. Sumber Rejeki", "PT. Global Supplies", "CV. Karya Mandiri"];
+    let masterBarang = ["Kertas A4 70gr", "Tinta Printer Epson", "Box Kardus 40x30", "Plastik Klip 10x15", "Stabilo Pilot", "Amplop Coklat", "Map Plastik"];
+    let masterUnits = ["pcs", "box", "kg", "roll", "lusin", "pack", "set", "lembar"];
+
     // DOM Elements
     const form = document.getElementById('barangForm');
     const supplierInput = document.getElementById('supplier');
     const namaBarangInput = document.getElementById('namaBarang');
+    const unitInput = document.getElementById('unit');
     const kategoriSelect = document.getElementById('kategori');
     const jumlahInput = document.getElementById('jumlah');
-    const unitInput = document.getElementById('unit');
     const tglMasukInput = document.getElementById('tanggalMasuk');
     const catatanInput = document.getElementById('catatan');
     const resetFormBtn = document.getElementById('resetFormBtn');
@@ -511,6 +584,126 @@
     const infoFilter = document.getElementById('infoFilter');
     const toastMsgDiv = document.getElementById('toastMessage');
 
+    // Helper Dropdown
+    function setupDropdown(inputElement, dropdownElement, itemsArray) {
+        if (!inputElement || !dropdownElement) return;
+        
+        function renderDropdown(filterText = '') {
+            const filtered = itemsArray.filter(item => 
+                item.toLowerCase().includes(filterText.toLowerCase())
+            );
+            if (filtered.length === 0) {
+                dropdownElement.innerHTML = '<div style="color:#999;">Tidak ada pilihan</div>';
+                return;
+            }
+            dropdownElement.innerHTML = filtered.map(item => 
+                `<div data-value="${item.replace(/"/g, '&quot;')}">${escapeHtml(item)}</div>`
+            ).join('');
+            
+            dropdownElement.querySelectorAll('div[data-value]').forEach(div => {
+                div.addEventListener('click', () => {
+                    inputElement.value = div.getAttribute('data-value');
+                    closeAllDropdowns();
+                });
+            });
+        }
+        
+        const btn = inputElement.parentElement.querySelector('.dropdown-btn');
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = dropdownElement.classList.contains('show');
+            closeAllDropdowns();
+            if (!isOpen) {
+                renderDropdown(inputElement.value);
+                dropdownElement.classList.add('show');
+            }
+        });
+        
+        inputElement.addEventListener('input', () => {
+            if (dropdownElement.classList.contains('show')) {
+                renderDropdown(inputElement.value);
+            }
+        });
+        
+        inputElement.addEventListener('focus', () => {
+            closeAllDropdowns();
+            renderDropdown(inputElement.value);
+            dropdownElement.classList.add('show');
+        });
+    }
+    
+    function closeAllDropdowns() {
+        document.querySelectorAll('.dropdown-list').forEach(dd => dd.classList.remove('show'));
+    }
+    
+    // Update master data dari riwayat (menambahkan nilai baru yang belum ada)
+    function updateMasterDataFromHistory() {
+        inventory.forEach(item => {
+            if (item.supplier && !masterSuppliers.includes(item.supplier)) {
+                masterSuppliers.push(item.supplier);
+            }
+            if (item.namaBarang && !masterBarang.includes(item.namaBarang)) {
+                masterBarang.push(item.namaBarang);
+            }
+            if (item.unit && !masterUnits.includes(item.unit)) {
+                masterUnits.push(item.unit);
+            }
+        });
+        // Refresh dropdown content agar opsi baru muncul (tanpa reinit)
+        refreshDropdownContent();
+    }
+    
+    function refreshDropdownContent() {
+        // Re-render konten dropdown sesuai data terbaru (opsional, karena setup ulang)
+        // Untuk simplenya, kita reload ulang dropdown list dengan data terupdate.
+        const supplierDropdown = document.getElementById('supplierDropdown');
+        const barangDropdown = document.getElementById('barangDropdown');
+        const unitDropdown = document.getElementById('unitDropdown');
+        
+        function renderStatic(container, items, currentValue) {
+            if (!container) return;
+            const filtered = items.filter(item => 
+                item.toLowerCase().includes(currentValue.toLowerCase())
+            );
+            if (filtered.length === 0) {
+                container.innerHTML = '<div style="color:#999;">Tidak ada pilihan</div>';
+                return;
+            }
+            container.innerHTML = filtered.map(item => 
+                `<div data-value="${item.replace(/"/g, '&quot;')}">${escapeHtml(item)}</div>`
+            ).join('');
+            container.querySelectorAll('div[data-value]').forEach(div => {
+                div.addEventListener('click', () => {
+                    const targetInput = div.closest('.hybrid-input')?.querySelector('input');
+                    if (targetInput) targetInput.value = div.getAttribute('data-value');
+                    closeAllDropdowns();
+                });
+            });
+        }
+        
+        // Untuk keperluan live, kita override render ketika dropdown dibuka
+        // Tapi karena sudah ada setup awal, kita update array-nya saja.
+    }
+    
+    // Inisialisasi dropdown dengan data terbaru
+    function initDropdowns() {
+        const supplierDropdown = document.getElementById('supplierDropdown');
+        const barangDropdown = document.getElementById('barangDropdown');
+        const unitDropdown = document.getElementById('unitDropdown');
+        
+        // Setup ulang dengan array terbaru
+        setupDropdown(supplierInput, supplierDropdown, masterSuppliers);
+        setupDropdown(namaBarangInput, barangDropdown, masterBarang);
+        setupDropdown(unitInput, unitDropdown, masterUnits);
+        
+        // Tutup dropdown jika klik di luar
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.hybrid-input')) {
+                closeAllDropdowns();
+            }
+        });
+    }
+
     function showToast(message, isError = false) {
         toastMsgDiv.textContent = message;
         toastMsgDiv.style.backgroundColor = isError ? '#b91c1c' : '#0f2b3d';
@@ -520,7 +713,6 @@
         }, 2000);
     }
 
-    // Set default tanggal hari ini
     function setDefaultDate() {
         if (!tglMasukInput.value) {
             const today = new Date();
@@ -531,7 +723,6 @@
         }
     }
 
-    // Load from localStorage
     function loadData() {
         const stored = localStorage.getItem('inventory_barang_masuk');
         if (stored) {
@@ -540,14 +731,17 @@
                 if (!Array.isArray(inventory)) inventory = [];
             } catch(e) { inventory = []; }
         } else {
-            // Data contoh demonstrasi (opsional)
             inventory = [];
         }
+        updateMasterDataFromHistory();
+        initDropdowns();
         applyFilters();
     }
 
     function saveData() {
         localStorage.setItem('inventory_barang_masuk', JSON.stringify(inventory));
+        updateMasterDataFromHistory();
+        initDropdowns(); // refresh pilihan setelah simpan
     }
 
     function formatDate(dateStr) {
@@ -557,7 +751,6 @@
         return `${parts[2]}/${parts[1]}/${parts[0]}`;
     }
     
-    // Format untuk Excel (tanggal standar)
     function formatDateForExcel(dateStr) {
         if (!dateStr) return '';
         const parts = dateStr.split('-');
@@ -575,7 +768,6 @@
         });
     }
 
-    // Filter & Render
     function applyFilters() {
         const keywordNama = filterNama.value.trim().toLowerCase();
         const keywordSupplier = filterSupplier.value.trim().toLowerCase();
@@ -603,7 +795,6 @@
         totalDataCount.textContent = `${totalAll} item`;
     }
 
-    // Render tabel dengan tombol Edit & Hapus
     function renderTable() {
         if (!tableBody) return;
         if (filteredInventory.length === 0) {
@@ -628,7 +819,6 @@
             </tr>
         `).join('');
 
-        // Event Edit
         document.querySelectorAll('.edit-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -636,7 +826,6 @@
                 loadItemToForm(id);
             });
         });
-        // Event Hapus
         document.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -648,7 +837,6 @@
         });
     }
 
-    // Menghapus berdasarkan ID
     function deleteItemById(id) {
         inventory = inventory.filter(item => item.id !== id);
         saveData();
@@ -657,7 +845,6 @@
         showToast('✅ Data berhasil dihapus');
     }
 
-    // Load data ke Form untuk diedit
     function loadItemToForm(id) {
         const item = inventory.find(i => i.id === id);
         if (!item) return;
@@ -690,7 +877,6 @@
         showToast('Mode Edit dibatalkan', false);
     }
 
-    // Proses tambah / update
     function addOrUpdateItem(event) {
         event.preventDefault();
 
@@ -703,7 +889,7 @@
         const catatan = catatanInput.value.trim();
 
         if (!supplier || !namaBarang || !kategori || !jumlah || !unit || !tanggalMasuk) {
-            alert('⚠️ Harap lengkapi semua field yang wajib (Supplier, Nama Barang, Kategori, Jumlah, Unit, Tanggal)');
+            alert('⚠️ Harap lengkapi semua field yang wajib');
             return;
         }
         if (isNaN(jumlah) || jumlah < 1) {
@@ -730,7 +916,7 @@
                 showToast('✅ Data berhasil diperbarui!');
                 cancelEdit();
             } else {
-                alert('Data tidak ditemukan, mungkin sudah terhapus.');
+                alert('Data tidak ditemukan');
                 cancelEdit();
             }
         } else {
@@ -771,7 +957,6 @@
         applyFilters();
     }
 
-    // Cetak
     function printTableData() {
         if (inventory.length === 0) {
             alert('Tidak ada data untuk dicetak');
@@ -813,43 +998,23 @@
         printWindow.print();
     }
 
-    // =============== EXPORT KE EXCEL (XLSX) ===============
     function exportToExcel() {
         if (inventory.length === 0) {
             alert('Tidak ada data untuk diekspor ke Excel');
             return;
         }
-        // Data yang diekspor berdasarkan hasil filter (jika ada filter aktif)
         const dataToExport = filteredInventory.length > 0 ? filteredInventory : inventory;
-        
-        // Siapkan array of array untuk SheetJS
-        const sheetData = [
-            ['Supplier', 'Nama Barang', 'Kategori', 'Jumlah', 'Satuan', 'Tanggal Masuk', 'Catatan']
-        ];
-        
+        const sheetData = [['Supplier', 'Nama Barang', 'Kategori', 'Jumlah', 'Satuan', 'Tanggal Masuk', 'Catatan']];
         dataToExport.forEach(item => {
             sheetData.push([
-                item.supplier,
-                item.namaBarang,
-                item.kategori,
-                item.jumlah,
-                item.unit,
-                formatDateForExcel(item.tanggalMasuk),
-                item.catatan || ''
+                item.supplier, item.namaBarang, item.kategori, item.jumlah, 
+                item.unit, formatDateForExcel(item.tanggalMasuk), item.catatan || ''
             ]);
         });
-        
-        // Buat worksheet dan workbook
         const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
-        // Atur lebar kolom (opsional)
-        worksheet['!cols'] = [
-            {wch:25}, {wch:30}, {wch:20}, {wch:12}, {wch:10}, {wch:15}, {wch:25}
-        ];
-        
+        worksheet['!cols'] = [{wch:25}, {wch:30}, {wch:20}, {wch:12}, {wch:10}, {wch:15}, {wch:25}];
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Barang Masuk');
-        
-        // Generate file Excel dan download
         const fileName = `Laporan_Barang_Masuk_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.xlsx`;
         XLSX.writeFile(workbook, fileName);
         showToast(`📎 Berhasil export ${dataToExport.length} data ke Excel`);
