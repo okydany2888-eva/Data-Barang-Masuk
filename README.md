@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Sistem Barang Masuk | Inventory + Total Barang Page</title>
+    <title>Sistem Input Barang Masuk | Per Bulan + Pagination</title>
     <!-- SheetJS library untuk export Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <style>
@@ -19,7 +19,6 @@
             min-height: 100vh;
         }
 
-        /* Container Utama */
         .app-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -53,37 +52,6 @@
             margin-top: 6px;
         }
 
-        /* Tab Navigation */
-        .tab-nav {
-            display: flex;
-            gap: 8px;
-            margin: 20px 0 0 0;
-            background: white;
-            border-radius: 40px;
-            padding: 6px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-        }
-        .tab-btn {
-            flex: 1;
-            background: transparent;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 40px;
-            font-weight: 700;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: 0.2s;
-            color: #4b5563;
-        }
-        .tab-btn.active {
-            background: #0f2b3d;
-            color: white;
-            box-shadow: 0 2px 8px rgba(15,43,61,0.2);
-        }
-        .tab-btn:not(.active):hover {
-            background: #e2e8f0;
-        }
-
         /* Kartu Form */
         .form-card {
             background: white;
@@ -95,7 +63,7 @@
 
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 18px;
         }
 
@@ -107,7 +75,7 @@
 
         .input-group label {
             font-weight: 600;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: #1e293b;
             letter-spacing: 0.3px;
         }
@@ -117,7 +85,7 @@
             padding: 10px 14px;
             border: 1.5px solid #e2e8f0;
             border-radius: 14px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             transition: all 0.2s;
             background: #fafcff;
         }
@@ -183,7 +151,6 @@
             border-radius: 24px;
             padding: 20px 24px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            margin-bottom: 20px;
         }
 
         .section-header {
@@ -201,6 +168,7 @@
             display: flex;
             align-items: baseline;
             gap: 12px;
+            flex-wrap: wrap;
         }
 
         .title-badge h2 {
@@ -237,7 +205,7 @@
             background: #eef2ff;
         }
 
-        /* Filter Panel (hanya untuk tab riwayat) */
+        /* Filter Panel */
         .filter-panel {
             background: #f9fbfd;
             padding: 16px 20px;
@@ -252,7 +220,7 @@
 
         .filter-item {
             flex: 1;
-            min-width: 160px;
+            min-width: 150px;
         }
 
         .filter-item label {
@@ -282,7 +250,7 @@
             font-size: 0.75rem;
         }
 
-        /* Tabel */
+        /* Tabel dengan lebar kolom yang sesuai */
         .table-wrapper {
             overflow-x: auto;
             border-radius: 18px;
@@ -291,57 +259,103 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
         }
 
         th {
             text-align: left;
-            padding: 12px 10px;
+            padding: 10px 8px;
             background: #f1f5f9;
             color: #1e293b;
             font-weight: 700;
             border-bottom: 2px solid #e2e8f0;
+            white-space: nowrap;
         }
 
         td {
-            padding: 11px 10px;
+            padding: 9px 8px;
             border-bottom: 1px solid #edf2f7;
             vertical-align: middle;
             color: #1f2a44;
+        }
+
+        /* Grup bulan */
+        .month-group {
+            background: #eef2ff;
+            font-weight: 700;
+            font-size: 0.8rem;
+            border-top: 2px solid #cbd5e1;
+            border-bottom: 2px solid #cbd5e1;
+        }
+        .month-group td {
+            background: #eef2ff;
+            padding: 8px 12px;
+            color: #0f2b3d;
         }
 
         .action-buttons {
             display: flex;
             gap: 6px;
             align-items: center;
+            flex-wrap: nowrap;
         }
-        .edit-btn {
+        .edit-btn, .delete-btn {
             background: none;
             border: none;
-            font-size: 1.1rem;
             cursor: pointer;
-            color: #0f3b5c;
-            padding: 4px 8px;
-            border-radius: 30px;
+            padding: 4px 6px;
+            border-radius: 20px;
+            font-size: 1rem;
             transition: all 0.1s;
+        }
+        .edit-btn {
+            color: #0f3b5c;
         }
         .edit-btn:hover {
             background: #e6f0fa;
-            transform: scale(1.02);
         }
         .delete-btn {
-            background: none;
-            border: none;
-            font-size: 1.2rem;
-            cursor: pointer;
             color: #b91c1c;
-            padding: 4px 8px;
-            border-radius: 30px;
-            transition: all 0.1s;
         }
         .delete-btn:hover {
             background: #fee2e2;
-            transform: scale(1.03);
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+        .page-btn {
+            background: white;
+            border: 1px solid #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .page-btn:hover:not(:disabled) {
+            background: #e2e8f0;
+        }
+        .page-btn.active {
+            background: #0f2b3d;
+            color: white;
+            border-color: #0f2b3d;
+        }
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .page-info {
+            font-size: 0.75rem;
+            color: #475569;
+            margin: 0 8px;
         }
 
         .empty-row td {
@@ -360,38 +374,6 @@
             margin-bottom: 12px;
         }
 
-        /* Kartu Total Summary */
-        .total-summary-card {
-            background: #f0f9ff;
-            border-radius: 20px;
-            padding: 16px 20px;
-            margin-bottom: 24px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            gap: 12px;
-            border: 1px solid #cbd5e1;
-        }
-        .summary-item {
-            background: white;
-            border-radius: 20px;
-            padding: 8px 20px;
-            min-width: 150px;
-            text-align: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .summary-item span:first-child {
-            font-size: 0.7rem;
-            color: #4b5563;
-            display: block;
-        }
-        .summary-item span:last-child {
-            font-size: 1.6rem;
-            font-weight: 800;
-            color: #0f2b3d;
-        }
-
-        /* Notifikasi */
         .toast-msg {
             position: fixed;
             bottom: 20px;
@@ -413,16 +395,15 @@
             font-size: 0.7rem;
             color: #5b6e8c;
         }
-        .hidden-tab {
-            display: none;
-        }
+
         @media (max-width: 640px) {
             body { padding: 12px; }
             .form-card { padding: 18px; }
             .btn-group .btn { flex: 1; text-align: center; }
             .filter-panel { flex-direction: column; align-items: stretch; }
             .section-header { flex-direction: column; align-items: flex-start; }
-            .tab-btn { font-size: 0.7rem; padding: 8px 12px; }
+            th, td { font-size: 0.7rem; padding: 6px 4px; }
+            .edit-btn, .delete-btn { padding: 2px 4px; font-size: 0.9rem; }
         }
     </style>
 </head>
@@ -430,86 +411,110 @@
 <div class="app-container">
     <div class="main-header">
         <h1>Sistem Pencatatan Barang Masuk</h1>
-        <p>Kelola penerimaan barang (Agregasi)</p>
+        <p>Kelola penerimaan barang</p>
     </div>
 
-    <!-- TAB NAVIGATION -->
-    <div class="tab-nav">
-        <button class="tab-btn active" id="tabRiwayatBtn">📋 Riwayat Barang Masuk</button>
-        <button class="tab-btn" id="tabTotalBarangBtn">📊 Total Semua Barang</button>
-    </div>
-
-    <!-- TAB 1 : RIWAYAT BARANG MASUK (dengan form input) -->
-    <div id="tabRiwayat" class="tab-content">
-        <div class="form-card">
-            <form id="barangForm">
-                <div class="form-grid">
-                    <div class="input-group"><label>🏭 Nama Supplier *</label><input type="text" id="supplier" placeholder="Contoh: PT, CV" required></div>
-                    <div class="input-group"><label>📦 Nama Barang *</label><input type="text" id="namaBarang" placeholder="Nama produk / material" required></div>
-                    <div class="input-group"><label>🏷️ Kategori *</label>
-                        <select id="kategori" required>
-                            <option value="" disabled selected>-- Pilih --</option>
-                            <option>Booklet 1 1/4</option><option>Booklet 1 1/4 tips</option><option>Booklet Kss</option>
-                            <option>Booklet Kss tips</option><option>Display box</option><option>Filter tips 21</option>
-                            <option>Filter tips 26</option><option>Filter tips 30</option><option>Trapezoid</option>
-                            <option>Sticker</option><option>Lainnya</option>
-                        </select>
-                    </div>
-                    <div class="input-group"><label>🔢 Jumlah *</label><input type="number" id="jumlah" placeholder="0" min="1" required></div>
-                    <div class="input-group"><label>📏 Satuan *</label><input type="text" id="unit" placeholder="pcs, box, kg, roll" required></div>
-                    <div class="input-group"><label>📅 Tanggal Masuk *</label><input type="date" id="tanggalMasuk" required></div>
-                    <div class="input-group"><label>📝 Catatan / No. PO</label><input type="text" id="catatan" placeholder="Opsional: PO-123 / INV-xxx"></div>
+    <!-- FORM TAMBAH / EDIT -->
+    <div class="form-card">
+        <form id="barangForm">
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>🏭 Supplier</label>
+                    <input type="text" id="supplier" placeholder="Nama supplier" required>
                 </div>
-                <div class="btn-group">
-                    <button type="submit" class="btn btn-primary" id="submitBtn">Tambah Barang</button>
-                    <button type="button" id="resetFormBtn" class="btn btn-secondary">🗑️ Reset Form</button>
-                    <button type="button" id="cancelEditBtn" class="btn btn-secondary" style="display:none;">✖️ Batalkan Edit</button>
+                <div class="input-group">
+                    <label>📦 Nama Barang</label>
+                    <input type="text" id="namaBarang" placeholder="Nama produk" required>
                 </div>
-            </form>
-        </div>
-
-        <div class="data-section">
-            <div class="section-header">
-                <div class="title-badge"><h2>📋 Riwayat Barang Masuk</h2><span class="badge" id="totalDataCount">0 item</span></div>
-                <div class="aksi-buttons"><button id="printBtn" class="small-icon-btn">🖨️ Cetak</button><button id="exportExcelBtn" class="small-icon-btn">📎 Export Excel</button></div>
+                <div class="input-group">
+                    <label>🏷️ Kategori</label>
+                    <select id="kategori" required>
+                        <option value="" disabled selected>-- Pilih --</option>
+                        <option>Booklet 1 1/4</option><option>Booklet 1 1/4 tips</option>
+                        <option>Booklet Kss</option><option>Booklet Kss tips</option>
+                        <option>Display box</option><option>Filter tips 21</option>
+                        <option>Filter tips 26</option><option>Filter tips 30</option>
+                        <option>Trapezoid</option><option>Sticker</option><option>Lainnya</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>🔢 Jumlah</label>
+                    <input type="number" id="jumlah" placeholder="0" min="1" required>
+                </div>
+                <div class="input-group">
+                    <label>📏 Satuan</label>
+                    <input type="text" id="unit" placeholder="pcs, box, kg" required>
+                </div>
+                <div class="input-group">
+                    <label>📅 Tanggal Masuk</label>
+                    <input type="date" id="tanggalMasuk" required>
+                </div>
+                <div class="input-group">
+                    <label>📝 Catatan</label>
+                    <input type="text" id="catatan" placeholder="Opsional">
+                </div>
             </div>
-            <div class="filter-panel">
-                <div class="filter-item"><label>🔍 Cari Nama Barang</label><input type="text" id="filterNama" placeholder="Ketik nama barang..."></div>
-                <div class="filter-item"><label>🏭 Cari Supplier</label><input type="text" id="filterSupplier" placeholder="Nama supplier..."></div>
-                <div class="filter-item"><label>📂 Filter Kategori</label><select id="filterKategori"><option value="">Semua Kategori</option><option>Booklet 1 1/4</option><option>Booklet 1 1/4 tips</option><option>Booklet Kss</option><option>Booklet Kss tips</option><option>Display box</option><option>Filter tips 21</option><option>Filter tips 26</option><option>Filter tips 30</option><option>Trapezoid</option><option>Sticker</option><option>Lainnya</option></select></div>
-                <button id="clearFilterBtn" class="btn-reset-filter">Reset Filter</button>
+            <div class="btn-group">
+                <button type="submit" class="btn btn-primary" id="submitBtn">Tambah Barang</button>
+                <button type="button" id="resetFormBtn" class="btn btn-secondary">🗑️ Reset Form</button>
+                <button type="button" id="cancelEditBtn" class="btn btn-secondary" style="display:none;">Batalkan Edit</button>
             </div>
-            <div id="infoFilter" class="info-search"></div>
-            <div class="table-wrapper"><table id="mainTable"><thead><tr><th>Supplier</th><th>Nama Barang</th><th>Kategori</th><th>Jumlah</th><th>Unit</th><th>Tanggal Masuk</th><th>Catatan</th><th>Aksi</th></tr></thead><tbody id="tableBody"><tr class="empty-row"><td colspan="8">⚡ Belum ada data. Silakan tambah barang masuk.</td></tr></tbody></table></div>
-        </div>
+        </form>
     </div>
 
-    <!-- TAB 2 : TOTAL SEMUA BARANG (HALAMAN RINGKASAN) -->
-    <div id="tabTotalBarang" class="tab-content hidden-tab">
-        <div class="data-section">
-            <div class="section-header">
-                <div class="title-badge"><h2>📊 Total Semua Barang (Agregasi)</h2><span class="badge" id="totalAggregateCount">0 item unik</span></div>
-                <div class="aksi-buttons"><button id="exportTotalExcelBtn" class="small-icon-btn">📎 Export Total ke Excel</button></div>
+    <!-- SECTION DATA -->
+    <div class="data-section">
+        <div class="section-header">
+            <div class="title-badge">
+                <h2>📋 Riwayat Barang Masuk</h2>
+                <span class="badge" id="totalDataCount">0 item</span>
             </div>
-            <div class="total-summary-card" id="summaryStats">
-                <div class="summary-item"><span>Total Transaksi</span><span id="totalTransaksi">0</span></div>
-                <div class="summary-item"><span>Total Jumlah Barang</span><span id="grandTotalJumlah">0</span></div>
-                <div class="summary-item"><span>Unik Nama Barang</span><span id="uniqueItemsCount">0</span></div>
-            </div>
-            <div class="filter-panel" style="margin-top:0;">
-                <div class="filter-item"><label>🔍 Filter Nama Barang</label><input type="text" id="filterTotalNama" placeholder="Cari nama barang..."></div>
-                <div class="filter-item"><label>🏷️ Filter Kategori</label><select id="filterTotalKategori"><option value="">Semua Kategori</option><option>Booklet 1 1/4</option><option>Booklet 1 1/4 tips</option><option>Booklet Kss</option><option>Booklet Kss tips</option><option>Display box</option><option>Filter tips 21</option><option>Filter tips 26</option><option>Filter tips 30</option><option>Trapezoid</option><option>Sticker</option><option>Lainnya</option></select></div>
-                <button id="resetTotalFilterBtn" class="btn-reset-filter">Reset Filter</button>
-            </div>
-            <div class="table-wrapper">
-                <table id="totalTable">
-                    <thead><tr><th>Nama Barang</th><th>Kategori</th><th>Total Jumlah</th><th>Satuan (umum)</th><th>Jumlah Supplier Terlibat</th><th>Terakhir Masuk</th></tr></thead>
-                    <tbody id="totalTableBody"><tr class="empty-row"><td colspan="6">Belum ada data barang.</td></tr></tbody>
-                </table>
+            <div class="aksi-buttons">
+                <button id="printBtn" class="small-icon-btn">🖨️ Cetak</button>
+                <button id="exportExcelBtn" class="small-icon-btn">📎 Export Excel</button>
             </div>
         </div>
+
+        <div class="filter-panel">
+            <div class="filter-item">
+                <label>🔍 Cari Barang / Supplier</label>
+                <input type="text" id="filterText" placeholder="Ketik nama barang atau supplier...">
+            </div>
+            <div class="filter-item">
+                <label>📂 Filter Kategori</label>
+                <select id="filterKategori">
+                    <option value="">Semua Kategori</option>
+                    <option>Booklet 1 1/4</option><option>Booklet 1 1/4 tips</option>
+                    <option>Booklet Kss</option><option>Booklet Kss tips</option>
+                    <option>Display box</option><option>Filter tips 21</option>
+                    <option>Filter tips 26</option><option>Filter tips 30</option>
+                    <option>Trapezoid</option><option>Sticker</option><option>Lainnya</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label>🗓️ Filter Bulan</label>
+                <input type="month" id="filterBulan" placeholder="Pilih bulan">
+            </div>
+            <button id="clearFilterBtn" class="btn-reset-filter">Reset Filter</button>
+        </div>
+
+        <div id="infoFilter" class="info-search"></div>
+
+        <div class="table-wrapper">
+            <table id="mainTable">
+                <thead>
+                    <tr><th>Supplier</th><th>Nama Barang</th><th>Kategori</th><th>Jml</th><th>Satuan</th><th>Tgl Masuk</th><th>Catatan</th><th>Aksi</th></tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr class="empty-row"><td colspan="8">⚡ Belum ada data. Silakan tambah barang masuk.</td></tr>
+                </tbody>
+             </table>
+        </div>
+
+        <!-- PAGINATION -->
+        <div class="pagination" id="paginationContainer"></div>
     </div>
-    <footer>📌 Data tersimpan lokal. Tab Total Barang mengakumulasi jumlah per nama barang + kategori.</footer>
+    <footer>📌 Data disimpan storage.</footer>
     <div id="toastMessage" class="toast-msg"></div>
 </div>
 
@@ -519,8 +524,12 @@
     let filteredInventory = [];   
     let editMode = false;
     let editingId = null;
+    
+    // Pagination
+    let currentPage = 1;
+    const rowsPerPage = 10;
 
-    // DOM Elemen
+    // DOM Elements
     const form = document.getElementById('barangForm');
     const supplierInput = document.getElementById('supplier');
     const namaBarangInput = document.getElementById('namaBarang');
@@ -536,31 +545,14 @@
     const totalDataCount = document.getElementById('totalDataCount');
     const printBtn = document.getElementById('printBtn');
     const exportExcelBtn = document.getElementById('exportExcelBtn');
-    const filterNama = document.getElementById('filterNama');
-    const filterSupplier = document.getElementById('filterSupplier');
+    const filterText = document.getElementById('filterText');
     const filterKategori = document.getElementById('filterKategori');
+    const filterBulan = document.getElementById('filterBulan');
     const clearFilterBtn = document.getElementById('clearFilterBtn');
     const infoFilter = document.getElementById('infoFilter');
     const toastMsgDiv = document.getElementById('toastMessage');
+    const paginationContainer = document.getElementById('paginationContainer');
 
-    // Tab elements
-    const tabRiwayatBtn = document.getElementById('tabRiwayatBtn');
-    const tabTotalBarangBtn = document.getElementById('tabTotalBarangBtn');
-    const tabRiwayatDiv = document.getElementById('tabRiwayat');
-    const tabTotalDiv = document.getElementById('tabTotalBarang');
-    
-    // Total page elements
-    const totalTableBody = document.getElementById('totalTableBody');
-    const filterTotalNama = document.getElementById('filterTotalNama');
-    const filterTotalKategori = document.getElementById('filterTotalKategori');
-    const resetTotalFilterBtn = document.getElementById('resetTotalFilterBtn');
-    const exportTotalExcelBtn = document.getElementById('exportTotalExcelBtn');
-    const totalAggregateCount = document.getElementById('totalAggregateCount');
-    const totalTransaksiSpan = document.getElementById('totalTransaksi');
-    const grandTotalJumlahSpan = document.getElementById('grandTotalJumlah');
-    const uniqueItemsCountSpan = document.getElementById('uniqueItemsCount');
-
-    // Helper
     function showToast(message, isError = false) {
         toastMsgDiv.textContent = message;
         toastMsgDiv.style.backgroundColor = isError ? '#b91c1c' : '#0f2b3d';
@@ -585,14 +577,14 @@
                 inventory = JSON.parse(stored);
                 if (!Array.isArray(inventory)) inventory = [];
             } catch(e) { inventory = []; }
-        } else { inventory = []; }
+        } else {
+            inventory = [];
+        }
         applyFilters();
-        renderTotalPage(); // refresh total page
     }
 
     function saveData() {
         localStorage.setItem('inventory_barang_masuk', JSON.stringify(inventory));
-        renderTotalPage();
     }
 
     function formatDate(dateStr) {
@@ -601,189 +593,306 @@
         if (parts.length !== 3) return dateStr;
         return `${parts[2]}/${parts[1]}/${parts[0]}`;
     }
-    function formatDateForExcel(dateStr) {
+
+    function getMonthYear(dateStr) {
         if (!dateStr) return '';
         const parts = dateStr.split('-');
-        return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dateStr;
+        if (parts.length !== 3) return '';
+        const bulan = new Date(dateStr).toLocaleString('id-ID', { month: 'long' });
+        return `${bulan} ${parts[0]}`;
     }
-    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m) { if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
 
-    // Filter & Render untuk tab Riwayat
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // Filter data (teks, kategori, bulan)
     function applyFilters() {
-        const keywordNama = filterNama.value.trim().toLowerCase();
-        const keywordSupplier = filterSupplier.value.trim().toLowerCase();
+        const searchText = filterText.value.trim().toLowerCase();
         const kategoriValue = filterKategori.value;
+        const bulanValue = filterBulan.value;
+
         filteredInventory = inventory.filter(item => {
             let match = true;
-            if (keywordNama && !item.namaBarang.toLowerCase().includes(keywordNama)) match = false;
-            if (keywordSupplier && !item.supplier.toLowerCase().includes(keywordSupplier)) match = false;
+            if (searchText) {
+                const inNama = item.namaBarang.toLowerCase().includes(searchText);
+                const inSupplier = item.supplier.toLowerCase().includes(searchText);
+                if (!inNama && !inSupplier) match = false;
+            }
             if (kategoriValue && item.kategori !== kategoriValue) match = false;
+            if (bulanValue) {
+                const itemBulan = item.tanggalMasuk.substring(0, 7); // YYYY-MM
+                if (itemBulan !== bulanValue) match = false;
+            }
             return match;
         });
-        renderTable();
+        
+        // Urutkan berdasarkan tanggal terbaru (desc)
+        filteredInventory.sort((a, b) => new Date(b.tanggalMasuk) - new Date(a.tanggalMasuk));
+        
+        currentPage = 1;
+        renderTableWithPagination();
         updateInfoFilter();
     }
+
     function updateInfoFilter() {
         const totalAll = inventory.length;
         const totalFiltered = filteredInventory.length;
-        if (filterNama.value || filterSupplier.value || filterKategori.value) infoFilter.textContent = `🔎 Menampilkan ${totalFiltered} dari ${totalAll} data (filter aktif)`;
-        else infoFilter.textContent = `📋 Total semua data: ${totalAll}`;
+        if (filterText.value || filterKategori.value || filterBulan.value) {
+            infoFilter.textContent = `🔎 Menampilkan ${totalFiltered} dari ${totalAll} data (filter aktif)`;
+        } else {
+            infoFilter.textContent = `📋 Total semua data: ${totalAll}`;
+        }
         totalDataCount.textContent = `${totalAll} item`;
     }
-    function renderTable() {
+
+    // Render tabel dengan grouping per bulan + pagination
+    function renderTableWithPagination() {
         if (!tableBody) return;
-        if (filteredInventory.length === 0) { tableBody.innerHTML = `<tr class="empty-row"><td colspan="8">${inventory.length === 0 ? "Belum ada data. Silakan tambah barang masuk." : "Tidak ada data yang sesuai."}</td></tr>`; return; }
-        tableBody.innerHTML = filteredInventory.map(item => `<tr data-id="${item.id}"><td>${escapeHtml(item.supplier)}</td><td>${escapeHtml(item.namaBarang)}</td><td>${escapeHtml(item.kategori)}</td><td style="text-align:right">${Number(item.jumlah).toLocaleString()}</td><td>${escapeHtml(item.unit)}</td><td>${formatDate(item.tanggalMasuk)}</td><td>${escapeHtml(item.catatan) || '-'}</td><td class="action-buttons"><button class="edit-btn" data-id="${item.id}" title="Edit Data">✏️</button><button class="delete-btn" data-id="${item.id}" title="Hapus">🗑️</button></td></tr>`).join('');
-        document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', (e) => { const id = btn.getAttribute('data-id'); loadItemToForm(id); }));
-        document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', (e) => { const id = btn.getAttribute('data-id'); if(confirm('Yakin hapus?')) deleteItemById(id); }));
+        
+        if (filteredInventory.length === 0) {
+            tableBody.innerHTML = `<tr class="empty-row"><td colspan="8">${inventory.length === 0 ? 'Belum ada data. Silakan tambah barang masuk.' : 'Tidak ada data yang sesuai dengan pencarian.'}</td></tr>`;
+            paginationContainer.innerHTML = '';
+            return;
+        }
+
+        // Group data berdasarkan bulan-tahun
+        const grouped = {};
+        filteredInventory.forEach(item => {
+            const monthYearKey = item.tanggalMasuk.substring(0, 7); // YYYY-MM
+            const monthYearDisplay = getMonthYear(item.tanggalMasuk);
+            if (!grouped[monthYearKey]) {
+                grouped[monthYearKey] = { display: monthYearDisplay, items: [] };
+            }
+            grouped[monthYearKey].items.push(item);
+        });
+
+        // Buat array flat dengan separator bulan
+        let flatRows = [];
+        const groupKeys = Object.keys(grouped).sort().reverse(); // terbaru dulu
+        groupKeys.forEach(key => {
+            flatRows.push({ type: 'month-header', monthDisplay: grouped[key].display, monthKey: key });
+            grouped[key].items.forEach(item => {
+                flatRows.push({ type: 'data', item: item });
+            });
+        });
+
+        // Pagination pada flatRows
+        const totalPages = Math.ceil(flatRows.length / rowsPerPage);
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const endIndex = startIndex + rowsPerPage;
+        const paginatedRows = flatRows.slice(startIndex, endIndex);
+
+        // Render HTML
+        let html = '';
+        for (const row of paginatedRows) {
+            if (row.type === 'month-header') {
+                html += `<tr class="month-group"><td colspan="8"><strong>📅 ${escapeHtml(row.monthDisplay)}</strong> (${grouped[row.monthKey].items.length} item)</td></tr>`;
+            } else {
+                const item = row.item;
+                html += `
+                    <tr data-id="${item.id}">
+                        <td>${escapeHtml(item.supplier)}</td>
+                        <td>${escapeHtml(item.namaBarang)}</td>
+                        <td>${escapeHtml(item.kategori)}</td>
+                        <td style="text-align:right">${Number(item.jumlah).toLocaleString()}</td>
+                        <td>${escapeHtml(item.unit)}</td>
+                        <td>${formatDate(item.tanggalMasuk)}</td>
+                        <td>${escapeHtml(item.catatan) || '-'}</td>
+                        <td class="action-buttons">
+                            <button class="edit-btn" data-id="${item.id}" title="Edit">✏️</button>
+                            <button class="delete-btn" data-id="${item.id}" title="Hapus">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+        tableBody.innerHTML = html;
+
+        // Event listeners untuk tombol edit/hapus
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = btn.getAttribute('data-id');
+                loadItemToForm(id);
+            });
+        });
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = btn.getAttribute('data-id');
+                if (confirm('Yakin ingin menghapus data ini ?')) deleteItemById(id);
+            });
+        });
+
+        // Render pagination controls
+        renderPaginationControls(totalPages);
     }
-    function deleteItemById(id) { inventory = inventory.filter(item => item.id !== id); saveData(); if(editMode && editingId === id) cancelEdit(); applyFilters(); showToast('✅ Data dihapus'); }
+
+    function renderPaginationControls(totalPages) {
+        if (totalPages <= 1) {
+            paginationContainer.innerHTML = '';
+            return;
+        }
+        let btnHtml = '';
+        btnHtml += `<button class="page-btn" id="firstPage" ${currentPage === 1 ? 'disabled' : ''}>« Pertama</button>`;
+        btnHtml += `<button class="page-btn" id="prevPage" ${currentPage === 1 ? 'disabled' : ''}>‹ Sebelum</button>`;
+        
+        // Tampilkan beberapa nomor halaman
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, currentPage + 2);
+        for (let i = startPage; i <= endPage; i++) {
+            btnHtml += `<button class="page-btn ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
+        }
+        
+        btnHtml += `<button class="page-btn" id="nextPage" ${currentPage === totalPages ? 'disabled' : ''}>Berikut ›</button>`;
+        btnHtml += `<button class="page-btn" id="lastPage" ${currentPage === totalPages ? 'disabled' : ''}>Terakhir »</button>`;
+        btnHtml += `<span class="page-info">Halaman ${currentPage} dari ${totalPages}</span>`;
+        
+        paginationContainer.innerHTML = btnHtml;
+        
+        // Pasang event
+        document.getElementById('firstPage')?.addEventListener('click', () => { currentPage = 1; renderTableWithPagination(); });
+        document.getElementById('prevPage')?.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderTableWithPagination(); } });
+        document.getElementById('nextPage')?.addEventListener('click', () => { if (currentPage < totalPages) { currentPage++; renderTableWithPagination(); } });
+        document.getElementById('lastPage')?.addEventListener('click', () => { currentPage = totalPages; renderTableWithPagination(); });
+        document.querySelectorAll('.page-btn[data-page]').forEach(btn => {
+            btn.addEventListener('click', () => { currentPage = parseInt(btn.dataset.page); renderTableWithPagination(); });
+        });
+    }
+
+    // CRUD Operations
+    function deleteItemById(id) {
+        inventory = inventory.filter(item => item.id !== id);
+        saveData();
+        if (editMode && editingId === id) cancelEdit();
+        applyFilters();
+        showToast('✅ Data berhasil dihapus');
+    }
+
     function loadItemToForm(id) {
         const item = inventory.find(i => i.id === id);
-        if(!item) return;
-        editMode = true; editingId = id;
-        supplierInput.value = item.supplier; namaBarangInput.value = item.namaBarang; kategoriSelect.value = item.kategori; jumlahInput.value = item.jumlah; unitInput.value = item.unit; tglMasukInput.value = item.tanggalMasuk; catatanInput.value = item.catatan || '';
-        submitBtn.textContent = '✏️ Simpan Perubahan'; submitBtn.classList.add('btn-edit-mode'); cancelEditBtn.style.display = 'inline-block'; showToast('✏️ Mode Edit aktif');
+        if (!item) return;
+        editMode = true;
+        editingId = id;
+        supplierInput.value = item.supplier;
+        namaBarangInput.value = item.namaBarang;
+        kategoriSelect.value = item.kategori;
+        jumlahInput.value = item.jumlah;
+        unitInput.value = item.unit;
+        tglMasukInput.value = item.tanggalMasuk;
+        catatanInput.value = item.catatan || '';
+        submitBtn.textContent = '✏️ Simpan Perubahan';
+        submitBtn.classList.add('btn-edit-mode');
+        cancelEditBtn.style.display = 'inline-block';
+        showToast('✏️ Mode Edit aktif', false);
         document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
     }
-    function cancelEdit() { editMode = false; editingId = null; resetFormFields(); submitBtn.textContent = 'Tambah Barang'; submitBtn.classList.remove('btn-edit-mode'); cancelEditBtn.style.display = 'none'; showToast('Mode Edit dibatalkan'); }
+
+    function cancelEdit() {
+        editMode = false;
+        editingId = null;
+        resetFormFields();
+        submitBtn.textContent = 'Tambah Barang';
+        submitBtn.classList.remove('btn-edit-mode');
+        cancelEditBtn.style.display = 'none';
+        showToast('Mode Edit dibatalkan', false);
+    }
+
     function addOrUpdateItem(event) {
         event.preventDefault();
-        const supplier = supplierInput.value.trim(), namaBarang = namaBarangInput.value.trim(), kategori = kategoriSelect.value, jumlah = parseInt(jumlahInput.value), unit = unitInput.value.trim(), tanggalMasuk = tglMasukInput.value, catatan = catatanInput.value.trim();
-        if (!supplier || !namaBarang || !kategori || !jumlah || !unit || !tanggalMasuk) { alert('Lengkapi semua field wajib!'); return; }
+        const supplier = supplierInput.value.trim();
+        const namaBarang = namaBarangInput.value.trim();
+        const kategori = kategoriSelect.value;
+        const jumlah = parseInt(jumlahInput.value);
+        const unit = unitInput.value.trim();
+        const tanggalMasuk = tglMasukInput.value;
+        const catatan = catatanInput.value.trim();
+
+        if (!supplier || !namaBarang || !kategori || !jumlah || !unit || !tanggalMasuk) {
+            alert('⚠️ Harap lengkapi semua field wajib');
+            return;
+        }
         if (isNaN(jumlah) || jumlah < 1) { alert('Jumlah minimal 1'); return; }
+
         if (editMode && editingId) {
             const index = inventory.findIndex(i => i.id === editingId);
-            if(index !== -1) { inventory[index] = {...inventory[index], supplier, namaBarang, kategori, jumlah, unit, tanggalMasuk, catatan: catatan || '', updatedAt: new Date().toISOString()}; saveData(); applyFilters(); showToast('✅ Data diperbarui'); cancelEdit(); }
-            else { alert('Data tidak ditemukan'); cancelEdit(); }
+            if (index !== -1) {
+                inventory[index] = { ...inventory[index], supplier, namaBarang, kategori, jumlah, unit, tanggalMasuk, catatan: catatan || '', updatedAt: new Date().toISOString() };
+                saveData();
+                applyFilters();
+                showToast('✅ Data berhasil diperbarui!');
+                cancelEdit();
+            } else { cancelEdit(); }
         } else {
-            const newItem = { id: Date.now() + '-' + Math.random().toString(36).substring(2,8), supplier, namaBarang, kategori, jumlah, unit, tanggalMasuk, catatan: catatan || '', createdAt: new Date().toISOString() };
-            inventory.unshift(newItem); saveData(); resetFormFields(); applyFilters(); showToast('📦 Barang ditambahkan');
+            const newItem = { id: Date.now() + '-' + Math.random().toString(36).substring(2, 8), supplier, namaBarang, kategori, jumlah, unit, tanggalMasuk, catatan: catatan || '', createdAt: new Date().toISOString() };
+            inventory.unshift(newItem);
+            saveData();
+            resetFormFields();
+            applyFilters();
+            showToast('📦 Barang berhasil ditambahkan!');
         }
     }
-    function resetFormFields() { supplierInput.value = ''; namaBarangInput.value = ''; kategoriSelect.value = ''; jumlahInput.value = ''; unitInput.value = ''; catatanInput.value = ''; setDefaultDate(); supplierInput.focus(); }
-    function resetAllFilters() { filterNama.value = ''; filterSupplier.value = ''; filterKategori.value = ''; applyFilters(); }
-    function printTableData() { if(inventory.length===0){ alert('Tidak ada data'); return; } const dataToPrint = filteredInventory.length>0 ? filteredInventory : inventory; let rowsHtml=''; dataToPrint.forEach(item=>{ rowsHtml+=`<tr><td>${escapeHtml(item.supplier)}</td><td>${escapeHtml(item.namaBarang)}</td><td>${escapeHtml(item.kategori)}</td><td style="text-align:right">${item.jumlah}</td><td>${escapeHtml(item.unit)}</td><td>${formatDate(item.tanggalMasuk)}</td><td>${escapeHtml(item.catatan)||'-'}</td></tr>`;}); const w=window.open('','_blank'); w.document.write(`<html><head><title>Laporan Barang Masuk</title><style>body{font-family:Arial;margin:20px;}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:8px}</style></head><body><h2>Laporan Barang Masuk</h2><p>Total:${dataToPrint.length}</p><table><thead><tr><th>Supplier</th><th>Nama Barang</th><th>Kategori</th><th>Jumlah</th><th>Unit</th><th>Tgl Masuk</th><th>Catatan</th></tr></thead><tbody>${rowsHtml}</tbody></table></body></html>`); w.document.close(); w.print(); }
-    function exportToExcel() { if(inventory.length===0){ alert('Tidak ada data'); return; } const data= filteredInventory.length>0 ? filteredInventory : inventory; const sheetData=[['Supplier','Nama Barang','Kategori','Jumlah','Satuan','Tanggal Masuk','Catatan']]; data.forEach(i=>{ sheetData.push([i.supplier, i.namaBarang, i.kategori, i.jumlah, i.unit, formatDateForExcel(i.tanggalMasuk), i.catatan||'']); }); const ws=XLSX.utils.aoa_to_sheet(sheetData); ws['!cols']=[{wch:25},{wch:30},{wch:20},{wch:12},{wch:10},{wch:15},{wch:25}]; const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Barang Masuk'); XLSX.writeFile(wb,`Laporan_Barang_Masuk_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.xlsx`); showToast('Export Excel berhasil'); }
 
-    // ==================== TOTAL PAGE (AGREGASI) ====================
-    function buildAggregation() {
-        const aggMap = new Map(); // key: namaBarang|kategori
-        for(let item of inventory) {
-            const key = `${item.namaBarang}|${item.kategori}`;
-            if(!aggMap.has(key)) {
-                aggMap.set(key, {
-                    namaBarang: item.namaBarang,
-                    kategori: item.kategori,
-                    totalJumlah: 0,
-                    suppliersSet: new Set(),
-                    lastDate: item.tanggalMasuk,
-                    unit: item.unit
-                });
-            }
-            const entry = aggMap.get(key);
-            entry.totalJumlah += item.jumlah;
-            entry.suppliersSet.add(item.supplier);
-            if(item.tanggalMasuk > entry.lastDate) entry.lastDate = item.tanggalMasuk;
-        }
-        const aggArray = Array.from(aggMap.values()).map(entry => ({
-            namaBarang: entry.namaBarang,
-            kategori: entry.kategori,
-            totalJumlah: entry.totalJumlah,
-            unit: entry.unit,
-            supplierCount: entry.suppliersSet.size,
-            lastDate: entry.lastDate
-        }));
-        return aggArray;
+    function resetFormFields() {
+        supplierInput.value = '';
+        namaBarangInput.value = '';
+        kategoriSelect.value = '';
+        jumlahInput.value = '';
+        unitInput.value = '';
+        catatanInput.value = '';
+        setDefaultDate();
+        supplierInput.focus();
     }
 
-    function renderTotalPage() {
-        let aggData = buildAggregation();
-        const keyword = filterTotalNama.value.trim().toLowerCase();
-        const kategoriFilter = filterTotalKategori.value;
-        let filteredAgg = aggData.filter(item => {
-            if(keyword && !item.namaBarang.toLowerCase().includes(keyword)) return false;
-            if(kategoriFilter && item.kategori !== kategoriFilter) return false;
-            return true;
+    function resetAllFilters() {
+        filterText.value = '';
+        filterKategori.value = '';
+        filterBulan.value = '';
+        applyFilters();
+    }
+
+    function printTableData() {
+        if (filteredInventory.length === 0) { alert('Tidak ada data untuk dicetak'); return; }
+        let rowsHtml = '';
+        filteredInventory.forEach(item => {
+            rowsHtml += `<tr><td>${escapeHtml(item.supplier)}</td><td>${escapeHtml(item.namaBarang)}</td><td>${escapeHtml(item.kategori)}</td><td style="text-align:right">${item.jumlah}</td><td>${escapeHtml(item.unit)}</td><td>${formatDate(item.tanggalMasuk)}</td><td>${escapeHtml(item.catatan) || '-'}</td></tr>`;
         });
-        // update summary stats
-        totalTransaksiSpan.innerText = inventory.length;
-        const grandTotal = inventory.reduce((sum,item)=> sum + item.jumlah,0);
-        grandTotalJumlahSpan.innerText = grandTotal.toLocaleString();
-        const uniqueCount = aggData.length;
-        uniqueItemsCountSpan.innerText = uniqueCount;
-        totalAggregateCount.innerText = `${filteredAgg.length} item unik`;
-        if(filteredAgg.length === 0) { totalTableBody.innerHTML = '<tr class="empty-row"><td colspan="6">Tidak ada data agregasi.</td></tr>'; return; }
-        totalTableBody.innerHTML = filteredAgg.map(item => `
-            <tr>
-                <td>${escapeHtml(item.namaBarang)}</td>
-                <td>${escapeHtml(item.kategori)}</td>
-                <td style="text-align:right">${item.totalJumlah.toLocaleString()}</td>
-                <td>${escapeHtml(item.unit)}</td>
-                <td style="text-align:center">${item.supplierCount}</td>
-                <td>${formatDate(item.lastDate)}</td>
-            </tr>
-        `).join('');
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`<html><head><title>Laporan Barang Masuk</title><style>body{font-family:Arial;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:8px;text-align:left}th{background:#eef2f5}</style></head><body><h2>📋 Laporan Penerimaan Barang</h2><p>Tanggal cetak: ${new Date().toLocaleString('id-ID')} | Total: ${filteredInventory.length}</p><table><thead><tr><th>Supplier</th><th>Nama Barang</th><th>Kategori</th><th>Jumlah</th><th>Satuan</th><th>Tgl Masuk</th><th>Catatan</th></tr></thead><tbody>${rowsHtml}</tbody></table></body></html>`);
+        printWindow.document.close();
+        printWindow.print();
     }
 
-    function exportTotalToExcel() {
-        let aggData = buildAggregation();
-        const keyword = filterTotalNama.value.trim().toLowerCase();
-        const kategoriFilter = filterTotalKategori.value;
-        let filteredAgg = aggData.filter(item => {
-            if(keyword && !item.namaBarang.toLowerCase().includes(keyword)) return false;
-            if(kategoriFilter && item.kategori !== kategoriFilter) return false;
-            return true;
-        });
-        if(filteredAgg.length === 0 && aggData.length>0) { alert('Tidak ada data sesuai filter untuk diekspor'); return; }
-        if(inventory.length===0){ alert('Belum ada data transaksi'); return; }
-        const sheetData = [['Nama Barang', 'Kategori', 'Total Jumlah', 'Satuan', 'Jumlah Supplier Terlibat', 'Terakhir Masuk']];
-        filteredAgg.forEach(item => {
-            sheetData.push([item.namaBarang, item.kategori, item.totalJumlah, item.unit, item.supplierCount, formatDateForExcel(item.lastDate)]);
-        });
-        const ws = XLSX.utils.aoa_to_sheet(sheetData);
-        ws['!cols'] = [{wch:30},{wch:25},{wch:15},{wch:12},{wch:22},{wch:18}];
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Total Semua Barang');
-        XLSX.writeFile(wb, `Total_Barang_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.xlsx`);
-        showToast('Export Total Barang ke Excel berhasil');
+    function exportToExcel() {
+        if (filteredInventory.length === 0) { alert('Tidak ada data untuk diekspor'); return; }
+        const sheetData = [['Supplier', 'Nama Barang', 'Kategori', 'Jumlah', 'Satuan', 'Tanggal Masuk', 'Catatan']];
+        filteredInventory.forEach(item => { sheetData.push([item.supplier, item.namaBarang, item.kategori, item.jumlah, item.unit, formatDate(item.tanggalMasuk), item.catatan || '']); });
+        const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+        worksheet['!cols'] = [{wch:25},{wch:30},{wch:20},{wch:12},{wch:10},{wch:15},{wch:25}];
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Barang Masuk');
+        XLSX.writeFile(workbook, `Laporan_Barang_Masuk_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.xlsx`);
+        showToast(`📎 Ekspor ${filteredInventory.length} data ke Excel`);
     }
 
-    // Event untuk tab total
-    filterTotalNama.addEventListener('input', renderTotalPage);
-    filterTotalKategori.addEventListener('change', renderTotalPage);
-    resetTotalFilterBtn.addEventListener('click', () => { filterTotalNama.value = ''; filterTotalKategori.value = ''; renderTotalPage(); });
-    exportTotalExcelBtn.addEventListener('click', exportTotalToExcel);
-
-    // TAB SWITCHING
-    function switchTab(tabId) {
-        if(tabId === 'riwayat') {
-            tabRiwayatDiv.classList.remove('hidden-tab');
-            tabTotalDiv.classList.add('hidden-tab');
-            tabRiwayatBtn.classList.add('active');
-            tabTotalBarangBtn.classList.remove('active');
-        } else {
-            tabRiwayatDiv.classList.add('hidden-tab');
-            tabTotalDiv.classList.remove('hidden-tab');
-            tabRiwayatBtn.classList.remove('active');
-            tabTotalBarangBtn.classList.add('active');
-            renderTotalPage(); // refresh saat tampil
-        }
-    }
-    tabRiwayatBtn.addEventListener('click', () => switchTab('riwayat'));
-    tabTotalBarangBtn.addEventListener('click', () => switchTab('total'));
-
-    // Event listeners utama
+    // Event Listeners
     form.addEventListener('submit', addOrUpdateItem);
-    resetFormBtn.addEventListener('click', () => { if(editMode) cancelEdit(); else resetFormFields(); });
+    resetFormBtn.addEventListener('click', () => { if (editMode) cancelEdit(); else resetFormFields(); });
     cancelEditBtn.addEventListener('click', cancelEdit);
     printBtn.addEventListener('click', printTableData);
     exportExcelBtn.addEventListener('click', exportToExcel);
     clearFilterBtn.addEventListener('click', resetAllFilters);
-    filterNama.addEventListener('input', applyFilters);
-    filterSupplier.addEventListener('input', applyFilters);
+    filterText.addEventListener('input', applyFilters);
     filterKategori.addEventListener('change', applyFilters);
-    
+    filterBulan.addEventListener('change', applyFilters);
+
     setDefaultDate();
     loadData();
 </script>
