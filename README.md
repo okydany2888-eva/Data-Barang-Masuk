@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Input Barang Masuk + Supplier | Pencarian & Ekspor</title>
+    <title>Input Barang Masuk  </title>
     <style>
         * {
             margin: 0;
@@ -346,7 +346,7 @@
             border-top: 1px solid #edf2f7;
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 480px) {
             body { padding: 0.7rem; }
             .header h1 { font-size: 1.2rem; }
             .header p { font-size: 0.7rem; }
@@ -363,7 +363,7 @@
             th, td { padding: 8px 6px; font-size: 0.7rem; }
         }
         
-        @media (max-height: 500px) and (orientation: landscape) {
+        @media (max-height: 900px) and (orientation: landscape) {
             body { padding: 0.5rem; }
             .header { padding: 0.5rem 1rem; }
             .header h1 { font-size: 1rem; }
@@ -402,11 +402,11 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>🏭 Nama Supplier</label>
-                    <input type="text" id="supplier" placeholder="Contoh: PT Sumber Makmur, CV Global Utama" required>
+                    <input type="text" id="supplier" placeholder="Contoh: PT, cv, dll" required>
                 </div>
                 <div class="form-group">
                     <label>📝 Nama Barang</label>
-                    <input type="text" id="namaBarang" placeholder="Contoh: Kertas A4, Box Display" required>
+                    <input type="text" id="namaBarang" placeholder="Contoh: Smoke box, Lume, dll" required>
                 </div>
             </div>
 
@@ -525,7 +525,7 @@
         </div>
     </div>
     <footer>
-        ⚡ Data tersimpan di LocalStorage · Pencarian Nama Barang, Supplier & Kategori · Responsif Android
+        ⚡ Data tersimpan di LocalStorage · Pencarian Nama Barang, Supplier & Kategori 
     </footer>
 </div>
 
