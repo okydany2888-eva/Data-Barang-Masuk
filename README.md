@@ -319,7 +319,7 @@
     <!-- HEADER -->
     <div class="main-header">
         <h1>Sistem Pencatatan Barang Masuk</h1>
-        <p>Kelola penerimaan barang dari supplier | Data tersimpan aman di browser</p>
+        <p>Kelola penerimaan barang dari supplier</p>
     </div>
 
     <!-- FORM TAMBAH BARANG -->
@@ -328,7 +328,7 @@
             <div class="form-grid">
                 <div class="input-group">
                     <label>🏭 Nama Supplier *</label>
-                    <input type="text" id="supplier" placeholder="Contoh: PT Maju Bersama" required>
+                    <input type="text" id="supplier" placeholder="Contoh: PT, CV" required>
                 </div>
                 <div class="input-group">
                     <label>📦 Nama Barang *</label>
@@ -369,7 +369,7 @@
                 </div>
             </div>
             <div class="btn-group">
-                <button type="submit" class="btn btn-primary">➕ Tambah Barang</button>
+                <button type="submit" class="btn btn-primary">Tambah Barang</button>
                 <button type="button" id="resetFormBtn" class="btn btn-secondary">🗑️ Reset Form</button>
             </div>
         </form>
