@@ -2,7 +2,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Sistem Input Barang Masuk | Inventory Management</title>
+    <title>Sistem Input Barang Masuk | Inventory Management + Edit + Excel</title>
+    <!-- SheetJS library untuk export Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -132,6 +134,16 @@
 
         .btn-secondary:hover {
             background: #e2e8f0;
+        }
+
+        .btn-edit-mode {
+            background: #eab308;
+            color: #1e293b;
+            border: none;
+        }
+        .btn-edit-mode:hover {
+            background: #ca8a04;
+            color: white;
         }
 
         /* Section Data */
@@ -266,6 +278,25 @@
             color: #1f2a44;
         }
 
+        .action-buttons {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .edit-btn {
+            background: none;
+            border: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            color: #0f3b5c;
+            padding: 4px 8px;
+            border-radius: 30px;
+            transition: all 0.1s;
+        }
+        .edit-btn:hover {
+            background: #e6f0fa;
+            transform: scale(1.02);
+        }
         .delete-btn {
             background: none;
             border: none;
@@ -276,7 +307,6 @@
             border-radius: 30px;
             transition: all 0.1s;
         }
-
         .delete-btn:hover {
             background: #fee2e2;
             transform: scale(1.03);
@@ -298,6 +328,22 @@
             margin-bottom: 12px;
         }
 
+        /* Notifikasi */
+        .toast-msg {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #0f2b3d;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
         footer {
             margin-top: 20px;
             text-align: center;
@@ -311,18 +357,18 @@
             .btn-group .btn { flex: 1; text-align: center; }
             .filter-panel { flex-direction: column; align-items: stretch; }
             .section-header { flex-direction: column; align-items: flex-start; }
+            .action-buttons { flex-direction: row; }
         }
     </style>
 </head>
 <body>
 <div class="app-container">
-    <!-- HEADER -->
     <div class="main-header">
         <h1>Sistem Pencatatan Barang Masuk</h1>
-        <p>Kelola penerimaan barang dari supplier</p>
+        <p>Kelola penerimaan barang dari supplier | Export ke Excel (XLSX) | Edit Data</p>
     </div>
 
-    <!-- FORM TAMBAH BARANG -->
+    <!-- FORM TAMBAH / EDIT -->
     <div class="form-card">
         <form id="barangForm">
             <div class="form-grid">
@@ -369,8 +415,9 @@
                 </div>
             </div>
             <div class="btn-group">
-                <button type="submit" class="btn btn-primary">Tambah Barang</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">➕ Tambah Barang</button>
                 <button type="button" id="resetFormBtn" class="btn btn-secondary">🗑️ Reset Form</button>
+                <button type="button" id="cancelEditBtn" class="btn btn-secondary" style="display:none;">✖️ Batalkan Edit</button>
             </div>
         </form>
     </div>
@@ -384,11 +431,10 @@
             </div>
             <div class="aksi-buttons">
                 <button id="printBtn" class="small-icon-btn">🖨️ Cetak</button>
-                <button id="exportCsvBtn" class="small-icon-btn">📎 Export CSV</button>
+                <button id="exportExcelBtn" class="small-icon-btn">📎 Export Excel (XLSX)</button>
             </div>
         </div>
 
-        <!-- PANEL FILTER -->
         <div class="filter-panel">
             <div class="filter-item">
                 <label>🔍 Cari Nama Barang</label>
@@ -423,32 +469,24 @@
         <div class="table-wrapper">
             <table id="mainTable">
                 <thead>
-                    <tr>
-                        <th>Supplier</th>
-                        <th>Nama Barang</th>
-                        <th>Kategori</th>
-                        <th>Jumlah</th>
-                        <th>Unit</th>
-                        <th>Tanggal Masuk</th>
-                        <th>Catatan</th>
-                        <th>Aksi</th>
-                    </tr>
+                    <tr><th>Supplier</th><th>Nama Barang</th><th>Kategori</th><th>Jumlah</th><th>Unit</th><th>Tanggal Masuk</th><th>Catatan</th><th>Aksi</th></tr>
                 </thead>
                 <tbody id="tableBody">
-                    <tr class="empty-row">
-                        <td colspan="8">⚡ Belum ada data. Silakan tambah barang masuk.</td>
-                    </tr>
+                    <tr class="empty-row"><td colspan="8">⚡ Belum ada data. Silakan tambah barang masuk.</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
-    <footer>📌 Data disimpan secara lokal di perangkat Anda. Pencarian berlaku pada Nama Barang, Supplier & Kategori.</footer>
+    <footer>📌 Data disimpan secara lokal. Klik ✏️ untuk edit, 🗑️ hapus. Export Excel akan menghasilkan file .xlsx berdasarkan data tampil/filter.</footer>
+    <div id="toastMessage" class="toast-msg"></div>
 </div>
 
 <script>
-    // ------------- DATA GLOBAL --------------
-    let inventory = [];           // Menyimpan semua item
-    let filteredInventory = [];   // Hasil filter
+    // ======================= DATA GLOBAL ========================
+    let inventory = [];           
+    let filteredInventory = [];   
+    let editMode = false;
+    let editingId = null;
 
     // DOM Elements
     const form = document.getElementById('barangForm');
@@ -460,17 +498,29 @@
     const tglMasukInput = document.getElementById('tanggalMasuk');
     const catatanInput = document.getElementById('catatan');
     const resetFormBtn = document.getElementById('resetFormBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const submitBtn = document.getElementById('submitBtn');
     const tableBody = document.getElementById('tableBody');
     const totalDataCount = document.getElementById('totalDataCount');
     const printBtn = document.getElementById('printBtn');
-    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const exportExcelBtn = document.getElementById('exportExcelBtn');
     const filterNama = document.getElementById('filterNama');
     const filterSupplier = document.getElementById('filterSupplier');
     const filterKategori = document.getElementById('filterKategori');
     const clearFilterBtn = document.getElementById('clearFilterBtn');
     const infoFilter = document.getElementById('infoFilter');
+    const toastMsgDiv = document.getElementById('toastMessage');
 
-    // ---------- Helper: Set default tanggal hari ini ----------
+    function showToast(message, isError = false) {
+        toastMsgDiv.textContent = message;
+        toastMsgDiv.style.backgroundColor = isError ? '#b91c1c' : '#0f2b3d';
+        toastMsgDiv.style.opacity = '1';
+        setTimeout(() => {
+            toastMsgDiv.style.opacity = '0';
+        }, 2000);
+    }
+
+    // Set default tanggal hari ini
     function setDefaultDate() {
         if (!tglMasukInput.value) {
             const today = new Date();
@@ -481,7 +531,7 @@
         }
     }
 
-    // ---------- Load from localStorage ----------
+    // Load from localStorage
     function loadData() {
         const stored = localStorage.getItem('inventory_barang_masuk');
         if (stored) {
@@ -490,26 +540,31 @@
                 if (!Array.isArray(inventory)) inventory = [];
             } catch(e) { inventory = []; }
         } else {
-            // Data contoh jika kosong (opsional)
+            // Data contoh demonstrasi (opsional)
             inventory = [];
         }
         applyFilters();
     }
 
-    // ---------- Save to localStorage ----------
     function saveData() {
         localStorage.setItem('inventory_barang_masuk', JSON.stringify(inventory));
     }
 
-    // ---------- Format tanggal (YYYY-MM-DD ke DD/MM/YYYY) ----------
     function formatDate(dateStr) {
         if (!dateStr) return '-';
         const parts = dateStr.split('-');
         if (parts.length !== 3) return dateStr;
         return `${parts[2]}/${parts[1]}/${parts[0]}`;
     }
+    
+    // Format untuk Excel (tanggal standar)
+    function formatDateForExcel(dateStr) {
+        if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        if (parts.length !== 3) return dateStr;
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
 
-    // Escape HTML khusus untuk keamanan
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, function(m) {
@@ -520,7 +575,7 @@
         });
     }
 
-    // ---------- Proses Filter (Nama Barang, Supplier, Kategori) ----------
+    // Filter & Render
     function applyFilters() {
         const keywordNama = filterNama.value.trim().toLowerCase();
         const keywordSupplier = filterSupplier.value.trim().toLowerCase();
@@ -533,12 +588,10 @@
             if (kategoriValue && item.kategori !== kategoriValue) match = false;
             return match;
         });
-
         renderTable();
         updateInfoFilter();
     }
 
-    // Menampilkan info jumlah filter
     function updateInfoFilter() {
         const totalAll = inventory.length;
         const totalFiltered = filteredInventory.length;
@@ -550,57 +603,97 @@
         totalDataCount.textContent = `${totalAll} item`;
     }
 
-    // ---------- Render Tabel dengan Data yang sudah difilter ----------
+    // Render tabel dengan tombol Edit & Hapus
     function renderTable() {
         if (!tableBody) return;
-
         if (filteredInventory.length === 0) {
             let emptyMessage = inventory.length === 0 ? "Belum ada data. Silakan tambah barang masuk." : "Tidak ada data yang sesuai dengan pencarian.";
             tableBody.innerHTML = `<tr class="empty-row"><td colspan="8">${emptyMessage}</td></tr>`;
             return;
         }
 
-        tableBody.innerHTML = filteredInventory.map((item, idx) => {
-            // Mencari index asli untuk kebutuhan hapus via id (lebih aman)
-            return `
-                <tr data-id="${item.id}">
-                    <td>${escapeHtml(item.supplier)}</td>
-                    <td>${escapeHtml(item.namaBarang)}</td>
-                    <td>${escapeHtml(item.kategori)}</td>
-                    <td style="text-align:right">${Number(item.jumlah).toLocaleString()}</td>
-                    <td>${escapeHtml(item.unit)}</td>
-                    <td>${formatDate(item.tanggalMasuk)}</td>
-                    <td>${escapeHtml(item.catatan) || '-'}</td>
-                    <td><button class="delete-btn" data-id="${item.id}" title="Hapus">🗑️</button></td>
-                </tr>
-            `;
-        }).join('');
+        tableBody.innerHTML = filteredInventory.map(item => `
+            <tr data-id="${item.id}">
+                <td>${escapeHtml(item.supplier)}</td>
+                <td>${escapeHtml(item.namaBarang)}</td>
+                <td>${escapeHtml(item.kategori)}</td>
+                <td style="text-align:right">${Number(item.jumlah).toLocaleString()}</td>
+                <td>${escapeHtml(item.unit)}</td>
+                <td>${formatDate(item.tanggalMasuk)}</td>
+                <td>${escapeHtml(item.catatan) || '-'}</td>
+                <td class="action-buttons">
+                    <button class="edit-btn" data-id="${item.id}" title="Edit Data">✏️</button>
+                    <button class="delete-btn" data-id="${item.id}" title="Hapus">🗑️</button>
+                </td>
+            </tr>
+        `).join('');
 
-        // Attach event listener ke semua tombol hapus setelah render
+        // Event Edit
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = btn.getAttribute('data-id');
+                loadItemToForm(id);
+            });
+        });
+        // Event Hapus
         document.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const id = btn.getAttribute('data-id');
-                if (id && confirm('Yakin ingin menghapus data ini ?')) {
+                if (confirm('Yakin ingin menghapus data ini ?')) {
                     deleteItemById(id);
                 }
             });
         });
     }
 
-    // Hapus berdasarkan ID unik
+    // Menghapus berdasarkan ID
     function deleteItemById(id) {
-        const newInventory = inventory.filter(item => item.id !== id);
-        inventory = newInventory;
+        inventory = inventory.filter(item => item.id !== id);
         saveData();
-        applyFilters();  // refresh tampilan dan filter
+        if (editMode && editingId === id) cancelEdit();
+        applyFilters();
+        showToast('✅ Data berhasil dihapus');
     }
 
-    // ---------- Tambah Data Baru ----------
-    function addNewItem(event) {
+    // Load data ke Form untuk diedit
+    function loadItemToForm(id) {
+        const item = inventory.find(i => i.id === id);
+        if (!item) return;
+
+        editMode = true;
+        editingId = id;
+
+        supplierInput.value = item.supplier;
+        namaBarangInput.value = item.namaBarang;
+        kategoriSelect.value = item.kategori;
+        jumlahInput.value = item.jumlah;
+        unitInput.value = item.unit;
+        tglMasukInput.value = item.tanggalMasuk;
+        catatanInput.value = item.catatan || '';
+
+        submitBtn.textContent = '✏️ Simpan Perubahan';
+        submitBtn.classList.add('btn-edit-mode');
+        cancelEditBtn.style.display = 'inline-block';
+        showToast('✏️ Mode Edit aktif. Ubah data lalu klik Simpan.', false);
+        document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function cancelEdit() {
+        editMode = false;
+        editingId = null;
+        resetFormFields();
+        submitBtn.textContent = '➕ Tambah Barang';
+        submitBtn.classList.remove('btn-edit-mode');
+        cancelEditBtn.style.display = 'none';
+        showToast('Mode Edit dibatalkan', false);
+    }
+
+    // Proses tambah / update
+    function addOrUpdateItem(event) {
         event.preventDefault();
 
-        // Ambil nilai
         const supplier = supplierInput.value.trim();
         const namaBarang = namaBarangInput.value.trim();
         const kategori = kategoriSelect.value;
@@ -609,7 +702,6 @@
         const tanggalMasuk = tglMasukInput.value;
         const catatan = catatanInput.value.trim();
 
-        // Validasi
         if (!supplier || !namaBarang || !kategori || !jumlah || !unit || !tanggalMasuk) {
             alert('⚠️ Harap lengkapi semua field yang wajib (Supplier, Nama Barang, Kategori, Jumlah, Unit, Tanggal)');
             return;
@@ -619,34 +711,48 @@
             return;
         }
 
-        // Buat object item dengan ID unix timestamp + random
-        const newItem = {
-            id: Date.now() + '-' + Math.random().toString(36).substring(2, 8),
-            supplier: supplier,
-            namaBarang: namaBarang,
-            kategori: kategori,
-            jumlah: jumlah,
-            unit: unit,
-            tanggalMasuk: tanggalMasuk,
-            catatan: catatan || '',
-            createdAt: new Date().toISOString()
-        };
-
-        inventory.unshift(newItem); // tambah di awal agar terbaru di atas
-        saveData();
-        resetFormFields();
-        applyFilters();
-
-        // Feedback visual (opsional)
-        const submitBtn = document.querySelector('.btn-primary');
-        const originalText = submitBtn.textContent;
-        submitBtn.textContent = '✓ Tersimpan!';
-        setTimeout(() => {
-            submitBtn.textContent = originalText;
-        }, 1200);
+        if (editMode && editingId) {
+            const index = inventory.findIndex(i => i.id === editingId);
+            if (index !== -1) {
+                inventory[index] = {
+                    ...inventory[index],
+                    supplier: supplier,
+                    namaBarang: namaBarang,
+                    kategori: kategori,
+                    jumlah: jumlah,
+                    unit: unit,
+                    tanggalMasuk: tanggalMasuk,
+                    catatan: catatan || '',
+                    updatedAt: new Date().toISOString()
+                };
+                saveData();
+                applyFilters();
+                showToast('✅ Data berhasil diperbarui!');
+                cancelEdit();
+            } else {
+                alert('Data tidak ditemukan, mungkin sudah terhapus.');
+                cancelEdit();
+            }
+        } else {
+            const newItem = {
+                id: Date.now() + '-' + Math.random().toString(36).substring(2, 8),
+                supplier: supplier,
+                namaBarang: namaBarang,
+                kategori: kategori,
+                jumlah: jumlah,
+                unit: unit,
+                tanggalMasuk: tanggalMasuk,
+                catatan: catatan || '',
+                createdAt: new Date().toISOString()
+            };
+            inventory.unshift(newItem);
+            saveData();
+            resetFormFields();
+            applyFilters();
+            showToast('📦 Barang berhasil ditambahkan!');
+        }
     }
 
-    // Reset semua input form
     function resetFormFields() {
         supplierInput.value = '';
         namaBarangInput.value = '';
@@ -654,11 +760,10 @@
         jumlahInput.value = '';
         unitInput.value = '';
         catatanInput.value = '';
-        setDefaultDate();   // set tanggal hari ini lagi
+        setDefaultDate();
         supplierInput.focus();
     }
 
-    // Reset semua filter
     function resetAllFilters() {
         filterNama.value = '';
         filterSupplier.value = '';
@@ -666,52 +771,41 @@
         applyFilters();
     }
 
-    // ---------- Fungsi Cetak (Print) ----------
+    // Cetak
     function printTableData() {
         if (inventory.length === 0) {
             alert('Tidak ada data untuk dicetak');
             return;
         }
-
-        const printWindow = window.open('', '_blank');
-        let rowsHtml = '';
         const dataToPrint = filteredInventory.length > 0 ? filteredInventory : inventory;
-        
+        let rowsHtml = '';
         dataToPrint.forEach(item => {
-            rowsHtml += `
-                <tr>
-                    <td>${escapeHtml(item.supplier)}</td>
-                    <td>${escapeHtml(item.namaBarang)}</td>
-                    <td>${escapeHtml(item.kategori)}</td>
-                    <td style="text-align:right">${item.jumlah}</td>
-                    <td>${escapeHtml(item.unit)}</td>
-                    <td>${formatDate(item.tanggalMasuk)}</td>
-                    <td>${escapeHtml(item.catatan) || '-'}</td>
-                </tr>
-            `;
+            rowsHtml += `<tr>
+                <td>${escapeHtml(item.supplier)}</td>
+                <td>${escapeHtml(item.namaBarang)}</td>
+                <td>${escapeHtml(item.kategori)}</td>
+                <td style="text-align:right">${item.jumlah}</td>
+                <td>${escapeHtml(item.unit)}</td>
+                <td>${formatDate(item.tanggalMasuk)}</td>
+                <td>${escapeHtml(item.catatan) || '-'}</td>
+            </tr>`;
         });
-
+        const printWindow = window.open('', '_blank');
         printWindow.document.write(`
             <html>
-            <head>
-                <title>Laporan Barang Masuk</title>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 20px; }
-                    h2 { color: #0f2b3d; text-align: center; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-                    th, td { border: 1px solid #aaa; padding: 8px; text-align: left; }
-                    th { background: #eef2f5; }
-                    .footer { margin-top: 20px; text-align: center; font-size: 12px; color: gray; }
-                </style>
+            <head><title>Laporan Barang Masuk</title>
+            <style>
+                body { font-family: Arial; margin:20px; }
+                h2 { color:#0f2b3d; text-align:center; }
+                table { width:100%; border-collapse: collapse; }
+                th, td { border:1px solid #aaa; padding:8px; text-align:left; }
+                th { background:#eef2f5; }
+            </style>
             </head>
             <body>
                 <h2>📋 Laporan Penerimaan Barang</h2>
-                <p style="text-align:center">Tanggal cetak: ${new Date().toLocaleString('id-ID')} | Total item: ${dataToPrint.length}</p>
-                <table>
-                    <thead><tr><th>Supplier</th><th>Nama Barang</th><th>Kategori</th><th>Jumlah</th><th>Unit</th><th>Tgl Masuk</th><th>Catatan</th></tr></thead>
-                    <tbody>${rowsHtml}</tbody>
-                </table>
-                <div class="footer">Sistem Input Barang Masuk</div>
+                <p style="text-align:center">Tanggal cetak: ${new Date().toLocaleString('id-ID')} | Total: ${dataToPrint.length}</p>
+                <table><thead><tr><th>Supplier</th><th>Nama Barang</th><th>Kategori</th><th>Jumlah</th><th>Unit</th><th>Tgl Masuk</th><th>Catatan</th></tr></thead><tbody>${rowsHtml}</tbody></table>
             </body>
             </html>
         `);
@@ -719,53 +813,62 @@
         printWindow.print();
     }
 
-    // ---------- Export CSV (berdasarkan data yang tampil/filter) ----------
-    function exportToCsv() {
+    // =============== EXPORT KE EXCEL (XLSX) ===============
+    function exportToExcel() {
         if (inventory.length === 0) {
-            alert('Tidak ada data untuk diekspor');
+            alert('Tidak ada data untuk diekspor ke Excel');
             return;
         }
+        // Data yang diekspor berdasarkan hasil filter (jika ada filter aktif)
         const dataToExport = filteredInventory.length > 0 ? filteredInventory : inventory;
-        const headers = ['Supplier', 'Nama Barang', 'Kategori', 'Jumlah', 'Unit', 'Tanggal Masuk', 'Catatan'];
-        const csvRows = [headers];
+        
+        // Siapkan array of array untuk SheetJS
+        const sheetData = [
+            ['Supplier', 'Nama Barang', 'Kategori', 'Jumlah', 'Satuan', 'Tanggal Masuk', 'Catatan']
+        ];
         
         dataToExport.forEach(item => {
-            const row = [
-                `"${item.supplier.replace(/"/g, '""')}"`,
-                `"${item.namaBarang.replace(/"/g, '""')}"`,
-                `"${item.kategori.replace(/"/g, '""')}"`,
+            sheetData.push([
+                item.supplier,
+                item.namaBarang,
+                item.kategori,
                 item.jumlah,
-                `"${item.unit.replace(/"/g, '""')}"`,
-                `"${formatDate(item.tanggalMasuk)}"`,
-                `"${(item.catatan || '').replace(/"/g, '""')}"`
-            ];
-            csvRows.push(row.join(','));
+                item.unit,
+                formatDateForExcel(item.tanggalMasuk),
+                item.catatan || ''
+            ]);
         });
         
-        const csvContent = '\uFEFF' + csvRows.join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.href = url;
-        link.download = `barang_masuk_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        // Buat worksheet dan workbook
+        const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+        // Atur lebar kolom (opsional)
+        worksheet['!cols'] = [
+            {wch:25}, {wch:30}, {wch:20}, {wch:12}, {wch:10}, {wch:15}, {wch:25}
+        ];
+        
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Barang Masuk');
+        
+        // Generate file Excel dan download
+        const fileName = `Laporan_Barang_Masuk_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.xlsx`;
+        XLSX.writeFile(workbook, fileName);
+        showToast(`📎 Berhasil export ${dataToExport.length} data ke Excel`);
     }
 
-    // ---------- Event Listener ----------
-    form.addEventListener('submit', addNewItem);
-    resetFormBtn.addEventListener('click', resetFormFields);
+    // Event Listeners
+    form.addEventListener('submit', addOrUpdateItem);
+    resetFormBtn.addEventListener('click', () => {
+        if (editMode) cancelEdit();
+        else resetFormFields();
+    });
+    cancelEditBtn.addEventListener('click', cancelEdit);
     printBtn.addEventListener('click', printTableData);
-    exportCsvBtn.addEventListener('click', exportToCsv);
+    exportExcelBtn.addEventListener('click', exportToExcel);
     clearFilterBtn.addEventListener('click', resetAllFilters);
-    
     filterNama.addEventListener('input', applyFilters);
     filterSupplier.addEventListener('input', applyFilters);
     filterKategori.addEventListener('change', applyFilters);
 
-    // Inisialisasi pertama
     setDefaultDate();
     loadData();
 </script>
