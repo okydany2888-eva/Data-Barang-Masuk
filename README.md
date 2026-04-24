@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Sistem Input Barang Masuk | AutoComplete + Per Bulan</title>
+    <title>Sistem Input Barang Masuk | Dropdown Select + Opsi Tambah</title>
     <!-- SheetJS library untuk export Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <style>
@@ -63,7 +63,7 @@
 
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
             gap: 18px;
         }
 
@@ -75,16 +75,20 @@
 
         .input-group label {
             font-weight: 600;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             color: #1e293b;
             letter-spacing: 0.3px;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
 
-        .input-group label i {
-            font-size: 1rem;
+        .input-group label span {
+            background: #e2e8f0;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            font-weight: normal;
         }
 
         .input-group input,
@@ -92,7 +96,7 @@
             padding: 10px 14px;
             border: 1.5px solid #e2e8f0;
             border-radius: 14px;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             transition: all 0.2s;
             background: #fafcff;
         }
@@ -104,9 +108,60 @@
             box-shadow: 0 0 0 3px rgba(44,110,158,0.15);
         }
 
-        /* Style untuk datalist */
-        datalist {
-            background: white;
+        /* Style untuk wrapper tambah opsi */
+        .select-with-add {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .select-with-add select {
+            flex: 1;
+        }
+        .btn-add-option {
+            background: #f1f5f9;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 0 12px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #0f2b3d;
+            font-weight: bold;
+        }
+        .btn-add-option:hover {
+            background: #e2e8f0;
+            border-color: #2c6e9e;
+        }
+        .inline-input {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+            animation: fadeIn 0.2s ease;
+        }
+        .inline-input input {
+            flex: 1;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+        }
+        .btn-small {
+            padding: 6px 14px;
+            font-size: 0.7rem;
+            border-radius: 30px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-save-option {
+            background: #0f2b3d;
+            color: white;
+        }
+        .btn-cancel-option {
+            background: #e2e8f0;
+            color: #334155;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .btn-group {
@@ -262,7 +317,7 @@
             font-size: 0.75rem;
         }
 
-        /* Tabel dengan lebar kolom yang sesuai */
+        /* Tabel */
         .table-wrapper {
             overflow-x: auto;
             border-radius: 18px;
@@ -291,7 +346,6 @@
             color: #1f2a44;
         }
 
-        /* Grup bulan */
         .month-group {
             background: #eef2ff;
             font-weight: 700;
@@ -333,7 +387,6 @@
             background: #fee2e2;
         }
 
-        /* Pagination */
         .pagination {
             display: flex;
             justify-content: center;
@@ -415,15 +468,8 @@
             .filter-panel { flex-direction: column; align-items: stretch; }
             .section-header { flex-direction: column; align-items: flex-start; }
             th, td { font-size: 0.7rem; padding: 6px 4px; }
-            .edit-btn, .delete-btn { padding: 2px 4px; font-size: 0.9rem; }
-        }
-
-        /* Saran otomatis */
-        .autocomplete-hint {
-            font-size: 0.7rem;
-            color: #6c757d;
-            margin-top: 2px;
-            margin-left: 12px;
+            .select-with-add { flex-wrap: wrap; }
+            .btn-add-option { padding: 0 15px; }
         }
     </style>
 </head>
@@ -431,46 +477,94 @@
 <div class="app-container">
     <div class="main-header">
         <h1>Sistem Pencatatan Barang Masuk</h1>
-        <p>Input jadi lebih mudah dengan saran otomatis (AutoComplete) | Kelola per bulan</p>
+        <p>Input dengan dropdown (select) pada Supplier, Nama Barang, dan Satuan | Bisa tambah opsi baru</p>
     </div>
 
     <!-- FORM TAMBAH / EDIT -->
     <div class="form-card">
         <form id="barangForm">
             <div class="form-grid">
+                <!-- Supplier dengan dropdown + tombol tambah -->
                 <div class="input-group">
-                    <label>🏭 Nama Supplier <i>(auto-saran)</i></label>
-                    <input type="text" id="supplier" list="supplierList" placeholder="Ketik atau pilih supplier" autocomplete="off" required>
-                    <datalist id="supplierList"></datalist>
-                    <div class="autocomplete-hint">💡 Akan muncul saran dari data tersimpan</div>
+                    <label>🏭 Nama Supplier <span>Dropdown + Tambah</span></label>
+                    <div class="select-with-add">
+                        <select id="supplierSelect" required>
+                            <option value="" disabled selected>-- Pilih Supplier --</option>
+                        </select>
+                        <button type="button" class="btn-add-option" id="addSupplierBtn" title="Tambah Supplier baru">+</button>
+                    </div>
+                    <div id="supplierAddContainer" style="display:none;" class="inline-input">
+                        <input type="text" id="newSupplierInput" placeholder="Nama supplier baru">
+                        <button type="button" class="btn-small btn-save-option" id="saveSupplierBtn">Simpan</button>
+                        <button type="button" class="btn-small btn-cancel-option" id="cancelSupplierBtn">Batal</button>
+                    </div>
                 </div>
+
+                <!-- Nama Barang dengan dropdown + tombol tambah -->
                 <div class="input-group">
-                    <label>📦 Nama Barang <i>(auto-saran)</i></label>
-                    <input type="text" id="namaBarang" list="barangList" placeholder="Ketik atau pilih barang" autocomplete="off" required>
-                    <datalist id="barangList"></datalist>
-                    <div class="autocomplete-hint">💡 Otomatis menyimpan data baru</div>
+                    <label>📦 Nama Barang <span>Dropdown + Tambah</span></label>
+                    <div class="select-with-add">
+                        <select id="barangSelect" required>
+                            <option value="" disabled selected>-- Pilih Barang --</option>
+                        </select>
+                        <button type="button" class="btn-add-option" id="addBarangBtn" title="Tambah Barang baru">+</button>
+                    </div>
+                    <div id="barangAddContainer" style="display:none;" class="inline-input">
+                        <input type="text" id="newBarangInput" placeholder="Nama barang baru">
+                        <button type="button" class="btn-small btn-save-option" id="saveBarangBtn">Simpan</button>
+                        <button type="button" class="btn-small btn-cancel-option" id="cancelBarangBtn">Batal</button>
+                    </div>
                 </div>
+
+                <!-- Kategori (dropdown tetap) -->
                 <div class="input-group">
                     <label>🏷️ Kategori</label>
-                    <select id="kategori" required>
-                        <option value="" disabled selected>-- Pilih --</option>
-                        <option>Booklet 1 1/4</option><option>Booklet 1 1/4 tips</option>
-                        <option>Booklet Kss</option><option>Booklet Kss tips</option>
-                        <option>Display box</option><option>Filter tips 21</option>
-                        <option>Filter tips 26</option><option>Filter tips 30</option>
-                        <option>Trapezoid</option><option>Sticker</option><option>Lainnya</option>
+                    <select id="kategoriSelect" required>
+                        <option value="" disabled selected>-- Pilih Kategori --</option>
+                        <option>Booklet 1 1/4</option>
+                        <option>Booklet 1 1/4 tips</option>
+                        <option>Booklet Kss</option>
+                        <option>Booklet Kss tips</option>
+                        <option>Display box</option>
+                        <option>Filter tips 21</option>
+                        <option>Filter tips 26</option>
+                        <option>Filter tips 30</option>
+                        <option>Trapezoid</option>
+                        <option>Sticker</option>
+                        <option>Lainnya</option>
                     </select>
                 </div>
+
                 <div class="input-group">
                     <label>🔢 Jumlah</label>
                     <input type="number" id="jumlah" placeholder="0" min="1" required>
                 </div>
+
+                <!-- Satuan dengan dropdown + tombol tambah -->
                 <div class="input-group">
-                    <label>📏 Satuan <i>(auto-saran)</i></label>
-                    <input type="text" id="unit" list="unitList" placeholder="pcs, box, kg, roll" autocomplete="off" required>
-                    <datalist id="unitList"></datalist>
-                    <div class="autocomplete-hint">💡 pcs, box, kg, roll, dll</div>
+                    <label>📏 Satuan <span>Dropdown + Tambah</span></label>
+                    <div class="select-with-add">
+                        <select id="unitSelect" required>
+                            <option value="" disabled selected>-- Pilih Satuan --</option>
+                            <option>pcs</option>
+                            <option>box</option>
+                            <option>kg</option>
+                            <option>roll</option>
+                            <option>set</option>
+                            <option>pack</option>
+                            <option>lembar</option>
+                            <option>meter</option>
+                            <option>liter</option>
+                        </select>
+                        <button type="button" class="btn-add-option" id="addUnitBtn" title="Tambah Satuan baru">+</button>
+                    </div>
+                    <div id="unitAddContainer" style="display:none;" class="inline-input">
+                        <input type="text" id="newUnitInput" placeholder="Satuan baru (contoh: dus)">
+                        <button type="button" class="btn-small btn-save-option" id="saveUnitBtn">Simpan</button>
+                        <button type="button" class="btn-small btn-cancel-option" id="cancelUnitBtn">Batal</button>
+                    </div>
                 </div>
+
                 <div class="input-group">
                     <label>📅 Tanggal Masuk</label>
                     <input type="date" id="tanggalMasuk" required>
@@ -519,7 +613,7 @@
             </div>
             <div class="filter-item">
                 <label>🗓️ Filter Bulan</label>
-                <input type="month" id="filterBulan" placeholder="Pilih bulan">
+                <input type="month" id="filterBulan">
             </div>
             <button id="clearFilterBtn" class="btn-reset-filter">✖️ Reset Filter</button>
         </div>
@@ -537,10 +631,9 @@
              </table>
         </div>
 
-        <!-- PAGINATION -->
         <div class="pagination" id="paginationContainer"></div>
     </div>
-    <footer>📌 Fitur AutoComplete pada Supplier, Nama Barang, dan Satuan akan belajar dari input Anda. Data tersimpan otomatis.</footer>
+    <footer>📌 Supplier, Nama Barang, dan Satuan menggunakan dropdown select. Klik tombol + untuk menambah opsi baru.</footer>
     <div id="toastMessage" class="toast-msg"></div>
 </div>
 
@@ -551,17 +644,21 @@
     let editMode = false;
     let editingId = null;
     
-    // Pagination
+    // Master data untuk dropdown (opsi dinamis)
+    let masterSuppliers = [];
+    let masterBarang = [];
+    let masterUnits = ['pcs', 'box', 'kg', 'roll', 'set', 'pack', 'lembar', 'meter', 'liter'];
+    
     let currentPage = 1;
     const rowsPerPage = 10;
 
     // DOM Elements
     const form = document.getElementById('barangForm');
-    const supplierInput = document.getElementById('supplier');
-    const namaBarangInput = document.getElementById('namaBarang');
-    const kategoriSelect = document.getElementById('kategori');
+    const supplierSelect = document.getElementById('supplierSelect');
+    const barangSelect = document.getElementById('barangSelect');
+    const kategoriSelect = document.getElementById('kategoriSelect');
     const jumlahInput = document.getElementById('jumlah');
-    const unitInput = document.getElementById('unit');
+    const unitSelect = document.getElementById('unitSelect');
     const tglMasukInput = document.getElementById('tanggalMasuk');
     const catatanInput = document.getElementById('catatan');
     const resetFormBtn = document.getElementById('resetFormBtn');
@@ -579,10 +676,24 @@
     const toastMsgDiv = document.getElementById('toastMessage');
     const paginationContainer = document.getElementById('paginationContainer');
 
-    // Datalist elements
-    const supplierDatalist = document.getElementById('supplierList');
-    const barangDatalist = document.getElementById('barangList');
-    const unitDatalist = document.getElementById('unitList');
+    // Elemen untuk tambah opsi
+    const addSupplierBtn = document.getElementById('addSupplierBtn');
+    const supplierAddContainer = document.getElementById('supplierAddContainer');
+    const newSupplierInput = document.getElementById('newSupplierInput');
+    const saveSupplierBtn = document.getElementById('saveSupplierBtn');
+    const cancelSupplierBtn = document.getElementById('cancelSupplierBtn');
+
+    const addBarangBtn = document.getElementById('addBarangBtn');
+    const barangAddContainer = document.getElementById('barangAddContainer');
+    const newBarangInput = document.getElementById('newBarangInput');
+    const saveBarangBtn = document.getElementById('saveBarangBtn');
+    const cancelBarangBtn = document.getElementById('cancelBarangBtn');
+
+    const addUnitBtn = document.getElementById('addUnitBtn');
+    const unitAddContainer = document.getElementById('unitAddContainer');
+    const newUnitInput = document.getElementById('newUnitInput');
+    const saveUnitBtn = document.getElementById('saveUnitBtn');
+    const cancelUnitBtn = document.getElementById('cancelUnitBtn');
 
     function showToast(message, isError = false) {
         toastMsgDiv.textContent = message;
@@ -601,23 +712,131 @@
         }
     }
 
-    // ========== UPDATE DATALIST (AutoComplete) dari data inventory ==========
-    function updateDatalists() {
-        // Kumpulkan semua supplier unik
-        const suppliers = [...new Set(inventory.map(item => item.supplier).filter(s => s && s.trim()))];
-        supplierDatalist.innerHTML = suppliers.map(s => `<option value="${escapeHtml(s)}">`).join('');
-        
-        // Kumpulkan semua nama barang unik
-        const barang = [...new Set(inventory.map(item => item.namaBarang).filter(b => b && b.trim()))];
-        barangDatalist.innerHTML = barang.map(b => `<option value="${escapeHtml(b)}">`).join('');
-        
-        // Kumpulkan semua satuan unik + default satuan umum
-        const unitsFromData = [...new Set(inventory.map(item => item.unit).filter(u => u && u.trim()))];
-        const defaultUnits = ['pcs', 'box', 'kg', 'roll', 'set', 'pack', 'lembar', 'meter', 'liter'];
-        const allUnits = [...new Set([...defaultUnits, ...unitsFromData])];
-        unitDatalist.innerHTML = allUnits.map(u => `<option value="${escapeHtml(u)}">`).join('');
+    // Update semua dropdown dari master data
+    function updateAllDropdowns() {
+        // Update Supplier dropdown
+        let supplierHtml = '<option value="" disabled selected>-- Pilih Supplier --</option>';
+        masterSuppliers.forEach(sup => {
+            supplierHtml += `<option value="${escapeHtml(sup)}">${escapeHtml(sup)}</option>`;
+        });
+        supplierSelect.innerHTML = supplierHtml;
+
+        // Update Barang dropdown
+        let barangHtml = '<option value="" disabled selected>-- Pilih Barang --</option>';
+        masterBarang.forEach(brg => {
+            barangHtml += `<option value="${escapeHtml(brg)}">${escapeHtml(brg)}</option>`;
+        });
+        barangSelect.innerHTML = barangHtml;
+
+        // Update Unit dropdown
+        let unitHtml = '<option value="" disabled selected>-- Pilih Satuan --</option>';
+        masterUnits.forEach(unit => {
+            unitHtml += `<option value="${escapeHtml(unit)}">${escapeHtml(unit)}</option>`;
+        });
+        unitSelect.innerHTML = unitHtml;
     }
 
+    // Load master data dari localStorage
+    function loadMasterData() {
+        const storedSuppliers = localStorage.getItem('master_suppliers');
+        if (storedSuppliers) {
+            try {
+                masterSuppliers = JSON.parse(storedSuppliers);
+                if (!Array.isArray(masterSuppliers)) masterSuppliers = [];
+            } catch(e) { masterSuppliers = []; }
+        } else {
+            masterSuppliers = ['PT. Maju Jaya', 'CV. Sumber Rezeki', 'UD. Berkah Abadi', 'PT. Indo Makmur'];
+        }
+
+        const storedBarang = localStorage.getItem('master_barang');
+        if (storedBarang) {
+            try {
+                masterBarang = JSON.parse(storedBarang);
+                if (!Array.isArray(masterBarang)) masterBarang = [];
+            } catch(e) { masterBarang = []; }
+        } else {
+            masterBarang = ['Kertas A4', 'Tinta Printer', 'Box Kardus', 'Plastik Kemasan', 'Stiker Label'];
+        }
+
+        const storedUnits = localStorage.getItem('master_units');
+        if (storedUnits) {
+            try {
+                masterUnits = JSON.parse(storedUnits);
+                if (!Array.isArray(masterUnits)) masterUnits = [];
+            } catch(e) { masterUnits = []; }
+        }
+        
+        updateAllDropdowns();
+    }
+
+    function saveMasterData() {
+        localStorage.setItem('master_suppliers', JSON.stringify(masterSuppliers));
+        localStorage.setItem('master_barang', JSON.stringify(masterBarang));
+        localStorage.setItem('master_units', JSON.stringify(masterUnits));
+    }
+
+    // Tambah opsi baru
+    function addNewSupplier() {
+        const newSupplier = newSupplierInput.value.trim();
+        if (!newSupplier) {
+            alert('Masukkan nama supplier');
+            return;
+        }
+        if (!masterSuppliers.includes(newSupplier)) {
+            masterSuppliers.push(newSupplier);
+            saveMasterData();
+            updateAllDropdowns();
+            supplierSelect.value = newSupplier;
+            showToast(`✅ Supplier "${newSupplier}" berhasil ditambahkan`);
+        } else {
+            supplierSelect.value = newSupplier;
+            showToast(`⚠️ Supplier sudah ada, langsung dipilih`);
+        }
+        supplierAddContainer.style.display = 'none';
+        newSupplierInput.value = '';
+    }
+
+    function addNewBarang() {
+        const newBarang = newBarangInput.value.trim();
+        if (!newBarang) {
+            alert('Masukkan nama barang');
+            return;
+        }
+        if (!masterBarang.includes(newBarang)) {
+            masterBarang.push(newBarang);
+            saveMasterData();
+            updateAllDropdowns();
+            barangSelect.value = newBarang;
+            showToast(`✅ Barang "${newBarang}" berhasil ditambahkan`);
+        } else {
+            barangSelect.value = newBarang;
+            showToast(`⚠️ Barang sudah ada, langsung dipilih`);
+        }
+        barangAddContainer.style.display = 'none';
+        newBarangInput.value = '';
+    }
+
+    function addNewUnit() {
+        const newUnit = newUnitInput.value.trim().toLowerCase();
+        if (!newUnit) {
+            alert('Masukkan satuan');
+            return;
+        }
+        if (!masterUnits.includes(newUnit)) {
+            masterUnits.push(newUnit);
+            saveMasterData();
+            updateAllDropdowns();
+            unitSelect.value = newUnit;
+            showToast(`✅ Satuan "${newUnit}" berhasil ditambahkan`);
+        } else {
+            unitSelect.value = newUnit;
+            showToast(`⚠️ Satuan sudah ada, langsung dipilih`);
+        }
+        unitAddContainer.style.display = 'none';
+        newUnitInput.value = '';
+    }
+
+    // Load inventory dari localStorage
     function loadData() {
         const stored = localStorage.getItem('inventory_barang_masuk');
         if (stored) {
@@ -626,16 +845,13 @@
                 if (!Array.isArray(inventory)) inventory = [];
             } catch(e) { inventory = []; }
         } else {
-            // Data contoh untuk demonstrasi
             inventory = [];
         }
-        updateDatalists();
         applyFilters();
     }
 
     function saveData() {
         localStorage.setItem('inventory_barang_masuk', JSON.stringify(inventory));
-        updateDatalists(); // Update datalist setiap kali data berubah
     }
 
     function formatDate(dateStr) {
@@ -660,12 +876,9 @@
             if (m === '<') return '&lt;';
             if (m === '>') return '&gt;';
             return m;
-        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
-            return c;
         });
     }
 
-    // Filter data (teks, kategori, bulan)
     function applyFilters() {
         const searchText = filterText.value.trim().toLowerCase();
         const kategoriValue = filterKategori.value;
@@ -680,15 +893,13 @@
             }
             if (kategoriValue && item.kategori !== kategoriValue) match = false;
             if (bulanValue) {
-                const itemBulan = item.tanggalMasuk.substring(0, 7); // YYYY-MM
+                const itemBulan = item.tanggalMasuk.substring(0, 7);
                 if (itemBulan !== bulanValue) match = false;
             }
             return match;
         });
         
-        // Urutkan berdasarkan tanggal terbaru (desc)
         filteredInventory.sort((a, b) => new Date(b.tanggalMasuk) - new Date(a.tanggalMasuk));
-        
         currentPage = 1;
         renderTableWithPagination();
         updateInfoFilter();
@@ -705,7 +916,6 @@
         totalDataCount.textContent = `${totalAll} item`;
     }
 
-    // Render tabel dengan grouping per bulan + pagination
     function renderTableWithPagination() {
         if (!tableBody) return;
         
@@ -715,7 +925,6 @@
             return;
         }
 
-        // Group data berdasarkan bulan-tahun
         const grouped = {};
         filteredInventory.forEach(item => {
             const monthYearKey = item.tanggalMasuk.substring(0, 7);
@@ -726,7 +935,6 @@
             grouped[monthYearKey].items.push(item);
         });
 
-        // Buat array flat dengan separator bulan
         let flatRows = [];
         const groupKeys = Object.keys(grouped).sort().reverse();
         groupKeys.forEach(key => {
@@ -736,13 +944,11 @@
             });
         });
 
-        // Pagination pada flatRows
         const totalPages = Math.ceil(flatRows.length / rowsPerPage);
         const startIndex = (currentPage - 1) * rowsPerPage;
         const endIndex = startIndex + rowsPerPage;
         const paginatedRows = flatRows.slice(startIndex, endIndex);
 
-        // Render HTML
         let html = '';
         for (const row of paginatedRows) {
             if (row.type === 'month-header') {
@@ -768,7 +974,6 @@
         }
         tableBody.innerHTML = html;
 
-        // Event listeners untuk tombol edit/hapus
         document.querySelectorAll('.edit-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -817,7 +1022,6 @@
         });
     }
 
-    // CRUD Operations
     function deleteItemById(id) {
         inventory = inventory.filter(item => item.id !== id);
         saveData();
@@ -831,17 +1035,19 @@
         if (!item) return;
         editMode = true;
         editingId = id;
-        supplierInput.value = item.supplier;
-        namaBarangInput.value = item.namaBarang;
+        
+        supplierSelect.value = item.supplier;
+        barangSelect.value = item.namaBarang;
         kategoriSelect.value = item.kategori;
         jumlahInput.value = item.jumlah;
-        unitInput.value = item.unit;
+        unitSelect.value = item.unit;
         tglMasukInput.value = item.tanggalMasuk;
         catatanInput.value = item.catatan || '';
+        
         submitBtn.textContent = '✏️ Simpan Perubahan';
         submitBtn.classList.add('btn-edit-mode');
         cancelEditBtn.style.display = 'inline-block';
-        showToast('✏️ Mode Edit aktif - ubah data', false);
+        showToast('✏️ Mode Edit aktif', false);
         document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
     }
 
@@ -857,11 +1063,12 @@
 
     function addOrUpdateItem(event) {
         event.preventDefault();
-        const supplier = supplierInput.value.trim();
-        const namaBarang = namaBarangInput.value.trim();
+        
+        const supplier = supplierSelect.value;
+        const namaBarang = barangSelect.value;
         const kategori = kategoriSelect.value;
         const jumlah = parseInt(jumlahInput.value);
-        const unit = unitInput.value.trim();
+        const unit = unitSelect.value;
         const tanggalMasuk = tglMasukInput.value;
         const catatan = catatanInput.value.trim();
 
@@ -891,14 +1098,13 @@
     }
 
     function resetFormFields() {
-        supplierInput.value = '';
-        namaBarangInput.value = '';
+        supplierSelect.value = '';
+        barangSelect.value = '';
         kategoriSelect.value = '';
         jumlahInput.value = '';
-        unitInput.value = '';
+        unitSelect.value = '';
         catatanInput.value = '';
         setDefaultDate();
-        supplierInput.focus();
     }
 
     function resetAllFilters() {
@@ -912,10 +1118,10 @@
         if (filteredInventory.length === 0) { alert('Tidak ada data untuk dicetak'); return; }
         let rowsHtml = '';
         filteredInventory.forEach(item => {
-            rowsHtml += `<tr><td>${escapeHtml(item.supplier)}</td><td>${escapeHtml(item.namaBarang)}</td><td>${escapeHtml(item.kategori)}</td><td style="text-align:right">${item.jumlah}</td><td>${escapeHtml(item.unit)}</td><td>${formatDate(item.tanggalMasuk)}</td><td>${escapeHtml(item.catatan) || '-'}</td></tr>`;
+            rowsHtml += `<tr><td>${escapeHtml(item.supplier)}</td><td>${escapeHtml(item.namaBarang)}</td><td>${escapeHtml(item.kategori)}</td><td style="text-align:right">${item.jumlah}</td><td>${escapeHtml(item.unit)}</td><td>${formatDate(item.tanggalMasuk)}</td><td>${escapeHtml(item.catatan) || '-'}</td><td></td></tr>`;
         });
         const printWindow = window.open('', '_blank');
-        printWindow.document.write(`<html><head><title>Laporan Barang Masuk</title><style>body{font-family:Arial;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:8px;text-align:left}th{background:#eef2f5}</style></head><body><h2>📋 Laporan Penerimaan Barang</h2><p>Tanggal cetak: ${new Date().toLocaleString('id-ID')} | Total: ${filteredInventory.length}</p> <table><thead><tr><th>Supplier</th><th>Nama Barang</th><th>Kategori</th><th>Jumlah</th><th>Satuan</th><th>Tgl Masuk</th><th>Catatan</th></tr></thead><tbody>${rowsHtml}</tbody></table></body></html>`);
+        printWindow.document.write(`<html><head><title>Laporan Barang Masuk</title><style>body{font-family:Arial;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #aaa;padding:8px;text-align:left}th{background:#eef2f5}</style></head><body><h2>📋 Laporan Penerimaan Barang</h2><p>Tanggal cetak: ${new Date().toLocaleString('id-ID')} | Total: ${filteredInventory.length}</p><table><thead><tr><th>Supplier</th><th>Nama Barang</th><th>Kategori</th><th>Jumlah</th><th>Satuan</th><th>Tgl Masuk</th><th>Catatan</th></tr></thead><tbody>${rowsHtml}</tbody></table></body></html>`);
         printWindow.document.close();
         printWindow.print();
     }
@@ -932,7 +1138,23 @@
         showToast(`📎 Ekspor ${filteredInventory.length} data ke Excel`);
     }
 
-    // Event Listeners
+    // Event Listeners untuk tambah opsi
+    addSupplierBtn.addEventListener('click', () => { supplierAddContainer.style.display = 'flex'; newSupplierInput.focus(); });
+    cancelSupplierBtn.addEventListener('click', () => { supplierAddContainer.style.display = 'none'; newSupplierInput.value = ''; });
+    saveSupplierBtn.addEventListener('click', addNewSupplier);
+    newSupplierInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addNewSupplier(); });
+
+    addBarangBtn.addEventListener('click', () => { barangAddContainer.style.display = 'flex'; newBarangInput.focus(); });
+    cancelBarangBtn.addEventListener('click', () => { barangAddContainer.style.display = 'none'; newBarangInput.value = ''; });
+    saveBarangBtn.addEventListener('click', addNewBarang);
+    newBarangInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addNewBarang(); });
+
+    addUnitBtn.addEventListener('click', () => { unitAddContainer.style.display = 'flex'; newUnitInput.focus(); });
+    cancelUnitBtn.addEventListener('click', () => { unitAddContainer.style.display = 'none'; newUnitInput.value = ''; });
+    saveUnitBtn.addEventListener('click', addNewUnit);
+    newUnitInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addNewUnit(); });
+
+    // Event Listeners utama
     form.addEventListener('submit', addOrUpdateItem);
     resetFormBtn.addEventListener('click', () => { if (editMode) cancelEdit(); else resetFormFields(); });
     cancelEditBtn.addEventListener('click', cancelEdit);
@@ -944,6 +1166,7 @@
     filterBulan.addEventListener('change', applyFilters);
 
     setDefaultDate();
+    loadMasterData();
     loadData();
 </script>
 </body>
