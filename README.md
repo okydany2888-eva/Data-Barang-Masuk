@@ -529,7 +529,7 @@
                     <option>Lainnya</option>
                 </select>
             </div>
-            <button id="clearFilterBtn" class="btn-reset-filter">✖️ Reset Filter</button>
+            <button id="clearFilterBtn" class="btn-reset-filter">Reset Filter</button>
         </div>
 
         <div id="infoFilter" class="info-search"></div>
@@ -545,7 +545,7 @@
             </table>
         </div>
     </div>
-    <footer>📌 Data tersimpan lokal. Supplier, Nama Barang, Satuan memiliki daftar pilihan + bisa input manual.</footer>
+    <footer>📌 Data tersimpan lokal.</footer>
     <div id="toastMessage" class="toast-msg"></div>
 </div>
 
