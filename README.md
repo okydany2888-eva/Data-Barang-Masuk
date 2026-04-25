@@ -533,7 +533,7 @@
 <div class="app-container">
     <div class="main-header">
         <h1>Sistem Pencatatan Barang Masuk</h1>
-        <p>Input dengan dropdown | Rekap Barang (total per nama barang) | Export Excel</p>
+        <p>Input dengan dropdown | Rekap Barang (total per nama barang & satuan) | Export Excel</p>
     </div>
 
     <!-- FORM TAMBAH / EDIT -->
@@ -637,7 +637,7 @@
     <!-- TAB NAVIGATION -->
     <div class="tab-navigation">
         <button class="tab-btn active" data-tab="riwayat">📋 Riwayat Barang Masuk</button>
-        <button class="tab-btn" data-tab="rekap">📊 Rekap Barang (Total per Nama)</button>
+        <button class="tab-btn" data-tab="rekap">📊 Rekap Barang (Total per Nama & Satuan)</button>
     </div>
 
     <!-- TAB 1: RIWAYAT BARANG MASUK -->
@@ -693,7 +693,7 @@
         </div>
     </div>
 
-    <!-- TAB 2: REKAP BARANG (TOTAL PER NAMA) -->
+    <!-- TAB 2: REKAP BARANG (TOTAL PER NAMA & SATUAN) -->
     <div id="tab-rekap" class="tab-content">
         <div class="data-section">
             <div class="section-header">
@@ -733,14 +733,14 @@
                         <tr><th>No</th><th>Nama Barang</th><th>Kategori</th><th>Satuan</th><th>Total Jumlah Masuk</th><th>Detail Penerimaan</th></tr>
                     </thead>
                     <tbody id="rekapBody">
-                        <tr class="empty-row"><td colspan="6">⚡ Belum ada data barang.学</tr>
+                        <tr class="empty-row"><td colspan="6">⚡ Belum ada data barang.</td></tr>
                     </tbody>
                  </table>
             </div>
         </div>
     </div>
     
-    <footer>📌 Supplier, Nama Barang, dan Satuan menggunakan dropdown select. Klik tombol + untuk menambah opsi baru. Tab Rekap menampilkan total per nama barang.</footer>
+    <footer>📌 Supplier, Nama Barang, dan Satuan menggunakan dropdown select. Klik tombol + untuk menambah opsi baru. Tab Rekap menampilkan total per nama barang dan satuan, dilengkapi dengan detail penerimaan.</footer>
     <div id="toastMessage" class="toast-msg"></div>
 </div>
 
@@ -1180,9 +1180,9 @@
         showToast(`📎 Ekspor ${filteredInventory.length} data ke Excel`);
     }
 
-    // ========== REKAP BARANG ==========
+    // ========== REKAP BARANG (per Nama & Satuan) ==========
     function renderRekap() {
-        // Group by namaBarang + satuan (karena satuan bisa berbeda)
+        // Group by namaBarang + satuan
         const rekapData = new Map(); // key: "namaBarang||satuan"
         
         inventory.forEach(item => {
@@ -1223,7 +1223,7 @@
         rekapArray.sort((a, b) => a.namaBarang.localeCompare(b.namaBarang));
         
         rekapCount.textContent = `${rekapArray.length} jenis barang`;
-        infoRekap.textContent = `📊 Menampilkan ${rekapArray.length} jenis barang dari ${rekapData.size} total`;
+        infoRekap.textContent = `📊 Menampilkan ${rekapArray.length} jenis barang dari ${rekapData.size} total (berdasarkan Nama & Satuan)`;
         
         if (rekapArray.length === 0) {
             rekapBody.innerHTML = '<tr class="empty-row"><td colspan="6">⚡ Tidak ada data barang.</td></tr>';
@@ -1232,7 +1232,7 @@
         
         let html = '';
         rekapArray.forEach((item, idx) => {
-            // Buat detail penerimaan
+            // Buat detail penerimaan yang lebih rapi
             const detailList = item.details.map(d => {
                 return `${formatDate(d.tanggal)}: ${d.jumlah.toLocaleString()} ${item.satuan} (${d.supplier})${d.catatan ? ' - ' + d.catatan : ''}`;
             }).join('<br>');
