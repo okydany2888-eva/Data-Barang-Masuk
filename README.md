@@ -397,6 +397,26 @@
             color: #0f2b3d;
         }
 
+        .month-nav-btn {
+            margin-left: 10px;
+            padding: 3px 10px;
+            font-size: 0.7rem;
+            border-radius: 20px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .month-nav-btn:hover:not(:disabled) {
+            background: #0f2b3d;
+            color: white;
+            border-color: #0f2b3d;
+        }
+        .month-nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         /* Tabel Rekap */
         .rekap-table th, .rekap-table td {
             text-align: left;
@@ -585,6 +605,8 @@
             .select-with-add { flex-wrap: wrap; }
             .btn-add-option { padding: 0 15px; }
             .tab-btn { font-size: 0.8rem; padding: 10px 12px; }
+            .month-group td { font-size: 0.7rem; }
+            .month-nav-btn { padding: 2px 6px; font-size: 0.6rem; }
         }
     </style>
 </head>
@@ -746,7 +768,7 @@
                     <tbody id="tableBody">
                         <tr class="empty-row"><td colspan="8">⚡ Belum ada data. Silakan tambah barang masuk.</td></tr>
                     </tbody>
-                职责
+                </table>
             </div>
             <div class="pagination" id="paginationContainer"></div>
         </div>
@@ -795,7 +817,7 @@
                     <tbody id="rekapBody">
                         <tr class="empty-row"><td colspan="6">⚡ Belum ada data barang.</td></tr>
                     </tbody>
-                  </table>
+                没人
             </div>
         </div>
     </div>
@@ -812,7 +834,7 @@
         </div>
     </div>
     
-    <footer>📌 Supplier, Nama Barang, dan Satuan menggunakan dropdown select. Klik tombol + untuk menambah opsi baru. Tab Rekap menampilkan total per nama barang.</footer>
+    <footer>📌 Pagination per bulan (1 halaman = 1 bulan) | Maksimal 30 baris per bulan dengan navigasi internal | Klik tombol + untuk menambah opsi baru</footer>
     <div id="toastMessage" class="toast-msg"></div>
 </div>
 
@@ -823,8 +845,11 @@
     let editMode = false;
     let editingId = null;
     
-    let currentPage = 1;
-    const rowsPerPage = 10;
+    let currentPage = 1; // Untuk navigasi antar bulan
+    const rowsPerMonth = 30; // Maksimal 30 baris per bulan
+    
+    // Menyimpan state pagination per bulan
+    let monthPages = {}; // { "2025-01": 1, "2025-02": 2, ... }
 
     // Master data untuk dropdown
     let masterSuppliers = [];
@@ -995,12 +1020,16 @@
     function loadData() {
         const stored = localStorage.getItem('inventory_barang_masuk');
         inventory = stored ? JSON.parse(stored) : [];
+        // Load saved month pages
+        const storedMonthPages = localStorage.getItem('month_pages');
+        if (storedMonthPages) monthPages = JSON.parse(storedMonthPages);
         applyFilters();
         renderRekap();
     }
 
     function saveData() {
         localStorage.setItem('inventory_barang_masuk', JSON.stringify(inventory));
+        localStorage.setItem('month_pages', JSON.stringify(monthPages));
         applyFilters();
         renderRekap();
     }
@@ -1032,6 +1061,7 @@
     // ========== RESET ALL DATA ==========
     function resetAllData() {
         inventory = [];
+        monthPages = {};
         saveData();
         if (editMode) cancelEdit();
         applyFilters();
@@ -1039,7 +1069,7 @@
         showToast('🗑️ Semua data telah dihapus secara permanen', false);
     }
 
-    // ========== RIWAYAT ==========
+    // ========== RIWAYAT DENGAN PAGINATION PER BULAN ==========
     function applyFilters() {
         const searchText = filterText.value.trim().toLowerCase();
         const kategoriValue = filterKategori.value;
@@ -1078,6 +1108,7 @@
             return;
         }
 
+        // Group data berdasarkan bulan
         const grouped = {};
         filteredInventory.forEach(item => {
             const key = item.tanggalMasuk.substring(0, 7);
@@ -1086,21 +1117,61 @@
             grouped[key].items.push(item);
         });
 
-        let flatRows = [];
-        Object.keys(grouped).sort().reverse().forEach(key => {
-            flatRows.push({ type: 'month-header', monthDisplay: grouped[key].display, count: grouped[key].items.length });
-            grouped[key].items.forEach(item => flatRows.push({ type: 'data', item }));
-        });
-
-        const totalPages = Math.ceil(flatRows.length / rowsPerPage);
-        const paginatedRows = flatRows.slice((currentPage-1)*rowsPerPage, currentPage*rowsPerPage);
-
-        let html = '';
-        for (const row of paginatedRows) {
-            if (row.type === 'month-header') {
-                html += `<tr class="month-group"><td colspan="8"><strong>📅 ${escapeHtml(row.monthDisplay)}</strong> (${row.count} item)</td></tr>`;
-            } else {
-                const item = row.item;
+        // Urutkan bulan dari terbaru ke terlama
+        const sortedMonths = Object.keys(grouped).sort().reverse();
+        
+        // Hitung total halaman berdasarkan bulan
+        const totalMonthPages = sortedMonths.length;
+        
+        if (totalMonthPages === 0) {
+            tableBody.innerHTML = '<tr class="empty-row"><td colspan="8">Tidak ada data</td></tr>';
+            paginationContainer.innerHTML = '';
+            return;
+        }
+        
+        // Validasi currentPage
+        if (currentPage < 1) currentPage = 1;
+        if (currentPage > totalMonthPages) currentPage = totalMonthPages;
+        
+        const currentMonthKey = sortedMonths[currentPage - 1];
+        const currentMonth = grouped[currentMonthKey];
+        const monthItems = currentMonth.items;
+        
+        // Ambil halaman untuk bulan ini dari state, default ke 1
+        if (!monthPages[currentMonthKey]) monthPages[currentMonthKey] = 1;
+        const currentMonthPage = monthPages[currentMonthKey];
+        const totalItemPages = Math.ceil(monthItems.length / rowsPerMonth);
+        
+        // Pagination dalam bulan
+        const start = (currentMonthPage - 1) * rowsPerMonth;
+        const end = start + rowsPerMonth;
+        const paginatedItems = monthItems.slice(start, end);
+        
+        // Buat navigasi internal bulan
+        let monthNavHtml = '';
+        if (totalItemPages > 1) {
+            monthNavHtml = `
+                <span style="margin-left: 15px; font-size: 0.7rem;">
+                    Halaman: ${currentMonthPage} dari ${totalItemPages}
+                    <button class="month-nav-btn month-prev" ${currentMonthPage === 1 ? 'disabled' : ''}>◀ Sebelumnya</button>
+                    <button class="month-nav-btn month-next" ${currentMonthPage === totalItemPages ? 'disabled' : ''}>Berikutnya ▶</button>
+                </span>
+            `;
+        }
+        
+        // Render header bulan
+        let html = `<tr class="month-group">
+            <td colspan="8">
+                <strong>📅 ${escapeHtml(currentMonth.display)}</strong> (${monthItems.length} item)
+                ${monthNavHtml}
+            </td>
+        </tr>`;
+        
+        // Render data
+        if (paginatedItems.length === 0) {
+            html += `<tr><td colspan="8" style="text-align:center; padding:20px;">⚠️ Tidak ada data untuk halaman ini</td></tr>`;
+        } else {
+            paginatedItems.forEach(item => {
                 html += `<tr data-id="${item.id}">
                     <td>${escapeHtml(item.supplier)}</td>
                     <td>${escapeHtml(item.namaBarang)}</td>
@@ -1114,10 +1185,38 @@
                         <button class="delete-btn" data-id="${item.id}" title="Hapus">🗑️</button>
                     </td>
                 </tr>`;
+            });
+        }
+        
+        tableBody.innerHTML = html;
+        
+        // Event listener untuk navigasi internal bulan
+        if (totalItemPages > 1) {
+            const prevBtn = document.querySelector('.month-prev');
+            const nextBtn = document.querySelector('.month-next');
+            
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    if (monthPages[currentMonthKey] > 1) {
+                        monthPages[currentMonthKey]--;
+                        saveData();
+                        renderTableWithPagination();
+                    }
+                });
+            }
+            
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    if (monthPages[currentMonthKey] < totalItemPages) {
+                        monthPages[currentMonthKey]++;
+                        saveData();
+                        renderTableWithPagination();
+                    }
+                });
             }
         }
-        tableBody.innerHTML = html;
-
+        
+        // Event handler untuk edit/delete
         document.querySelectorAll('.edit-btn').forEach(btn => {
             btn.addEventListener('click', (e) => { loadItemToForm(btn.getAttribute('data-id')); });
         });
@@ -1126,28 +1225,63 @@
                 if (confirm('Yakin ingin menghapus data ini ?')) deleteItemById(btn.getAttribute('data-id'));
             });
         });
-
-        renderPaginationControls(totalPages);
+        
+        // Render navigasi antar bulan
+        renderMonthNavigation(totalMonthPages);
     }
 
-    function renderPaginationControls(totalPages) {
-        if (totalPages <= 1) { paginationContainer.innerHTML = ''; return; }
-        let html = `<button class="page-btn" id="firstPage" ${currentPage === 1 ? 'disabled' : ''}>« Pertama</button>
-                    <button class="page-btn" id="prevPage" ${currentPage === 1 ? 'disabled' : ''}>‹ Sebelum</button>`;
-        for (let i = Math.max(1, currentPage-2); i <= Math.min(totalPages, currentPage+2); i++) {
-            html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
+    function renderMonthNavigation(totalMonthPages) {
+        if (totalMonthPages <= 1) {
+            paginationContainer.innerHTML = '';
+            return;
         }
-        html += `<button class="page-btn" id="nextPage" ${currentPage === totalPages ? 'disabled' : ''}>Berikut ›</button>
-                 <button class="page-btn" id="lastPage" ${currentPage === totalPages ? 'disabled' : ''}>Terakhir »</button>
-                 <span class="page-info">Halaman ${currentPage} dari ${totalPages}</span>`;
+        
+        let html = `<div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px; flex-wrap: wrap;">
+            <button class="page-btn" id="firstMonthPage" ${currentPage === 1 ? 'disabled' : ''}>« Bulan Pertama</button>
+            <button class="page-btn" id="prevMonthPage" ${currentPage === 1 ? 'disabled' : ''}>‹ Bulan Sebelumnya</button>`;
+        
+        // Tampilkan maksimal 5 tombol bulan
+        const startMonth = Math.max(1, currentPage - 2);
+        const endMonth = Math.min(totalMonthPages, currentPage + 2);
+        
+        for (let i = startMonth; i <= endMonth; i++) {
+            html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" data-month-page="${i}">Bulan ${i}</button>`;
+        }
+        
+        html += `<button class="page-btn" id="nextMonthPage" ${currentPage === totalMonthPages ? 'disabled' : ''}>Bulan Berikutnya ›</button>
+            <button class="page-btn" id="lastMonthPage" ${currentPage === totalMonthPages ? 'disabled' : ''}>Bulan Terakhir »</button>
+            <span class="page-info">Bulan ${currentPage} dari ${totalMonthPages}</span>
+        </div>`;
+        
         paginationContainer.innerHTML = html;
         
-        document.getElementById('firstPage')?.addEventListener('click', () => { currentPage = 1; renderTableWithPagination(); });
-        document.getElementById('prevPage')?.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderTableWithPagination(); } });
-        document.getElementById('nextPage')?.addEventListener('click', () => { if (currentPage < totalPages) { currentPage++; renderTableWithPagination(); } });
-        document.getElementById('lastPage')?.addEventListener('click', () => { currentPage = totalPages; renderTableWithPagination(); });
-        document.querySelectorAll('.page-btn[data-page]').forEach(btn => {
-            btn.addEventListener('click', () => { currentPage = parseInt(btn.dataset.page); renderTableWithPagination(); });
+        // Event listeners untuk navigasi bulan
+        document.getElementById('firstMonthPage')?.addEventListener('click', () => { 
+            currentPage = 1; 
+            renderTableWithPagination(); 
+        });
+        document.getElementById('prevMonthPage')?.addEventListener('click', () => { 
+            if (currentPage > 1) { 
+                currentPage--; 
+                renderTableWithPagination(); 
+            } 
+        });
+        document.getElementById('nextMonthPage')?.addEventListener('click', () => { 
+            if (currentPage < totalMonthPages) { 
+                currentPage++; 
+                renderTableWithPagination(); 
+            } 
+        });
+        document.getElementById('lastMonthPage')?.addEventListener('click', () => { 
+            currentPage = totalMonthPages; 
+            renderTableWithPagination(); 
+        });
+        
+        document.querySelectorAll('[data-month-page]').forEach(btn => {
+            btn.addEventListener('click', () => { 
+                currentPage = parseInt(btn.dataset.monthPage); 
+                renderTableWithPagination(); 
+            });
         });
     }
 
@@ -1269,8 +1403,7 @@
 
     // ========== REKAP BARANG ==========
     function renderRekap() {
-        // Group by namaBarang + satuan (karena satuan bisa berbeda)
-        const rekapData = new Map(); // key: "namaBarang||satuan"
+        const rekapData = new Map();
         
         inventory.forEach(item => {
             const key = `${item.namaBarang}||${item.unit}`;
@@ -1293,7 +1426,6 @@
             });
         });
 
-        // Konversi ke array dan filter
         let rekapArray = Array.from(rekapData.values());
         
         const searchText = rekapFilterText.value.trim().toLowerCase();
@@ -1306,7 +1438,6 @@
             rekapArray = rekapArray.filter(r => r.kategori === kategoriValue);
         }
         
-        // Urutkan berdasarkan nama barang
         rekapArray.sort((a, b) => a.namaBarang.localeCompare(b.namaBarang));
         
         rekapCount.textContent = `${rekapArray.length} jenis barang`;
@@ -1319,7 +1450,6 @@
         
         let html = '';
         rekapArray.forEach((item, idx) => {
-            // Buat detail penerimaan
             const detailList = item.details.map(d => {
                 return `${formatDate(d.tanggal)}: ${d.jumlah.toLocaleString()} ${item.satuan} (${d.supplier})${d.catatan ? ' - ' + d.catatan : ''}`;
             }).join('<br>');
@@ -1334,12 +1464,12 @@
             </tr>`;
         });
         
-        // Tambah baris total keseluruhan
         const grandTotal = rekapArray.reduce((sum, item) => sum + item.total, 0);
         html += `<tr class="total-row"><td colspan="4" style="text-align:right; font-weight:bold;">GRAND TOTAL</td>
                  <td style="text-align:right; font-weight:bold;">${grandTotal.toLocaleString()}</td>
-                 <td></td></tr>`;
-        
+                 <td></td>
+            尖
+	
         rekapBody.innerHTML = html;
     }
     
@@ -1352,7 +1482,6 @@
     function exportRekapToExcel() {
         if (inventory.length === 0) { alert('Tidak ada data untuk diekspor'); return; }
         
-        // Rekalkulasi untuk export
         const rekapData = new Map();
         inventory.forEach(item => {
             const key = `${item.namaBarang}||${item.unit}`;
