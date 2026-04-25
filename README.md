@@ -516,6 +516,45 @@
             display: block;
         }
 
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+                margin: 0;
+            }
+            .main-header, .form-card, .tab-navigation, .filter-panel, .aksi-buttons, .btn, .btn-reset-filter, .pagination, footer, .toast-msg {
+                display: none !important;
+            }
+            .data-section {
+                box-shadow: none;
+                padding: 0;
+                margin: 0;
+            }
+            .table-wrapper {
+                overflow: visible;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            th, td {
+                border: 1px solid #ddd;
+                padding: 8px;
+            }
+            .section-header {
+                display: block;
+                border-bottom: 2px solid #000;
+                margin-bottom: 10px;
+            }
+            .title-badge h2 {
+                font-size: 18px;
+            }
+            .badge {
+                display: none;
+            }
+        }
+
         @media (max-width: 640px) {
             body { padding: 12px; }
             .form-card { padding: 18px; }
@@ -533,7 +572,7 @@
 <div class="app-container">
     <div class="main-header">
         <h1>Sistem Pencatatan Barang Masuk</h1>
-        <p>Input dengan dropdown | Rekap Barang (total per nama barang & satuan) | Export Excel</p>
+        <p>Input dengan dropdown | Rekap Barang (total per nama barang & satuan) | Export Excel | Cetak Rekap</p>
     </div>
 
     <!-- FORM TAMBAH / EDIT -->
@@ -649,7 +688,7 @@
                     <span class="badge" id="totalDataCount">0 item</span>
                 </div>
                 <div class="aksi-buttons">
-                    <button id="printBtn" class="small-icon-btn">🖨️ Cetak</button>
+                    <button id="printBtn" class="small-icon-btn">🖨️ Cetak Riwayat</button>
                     <button id="exportExcelBtn" class="small-icon-btn">📎 Export Excel</button>
                 </div>
             </div>
@@ -702,6 +741,7 @@
                     <span class="badge" id="rekapCount">0 item</span>
                 </div>
                 <div class="aksi-buttons">
+                    <button id="printRekapBtn" class="small-icon-btn">🖨️ Cetak Rekap</button>
                     <button id="exportRekapExcelBtn" class="small-icon-btn">📎 Export Rekap Excel</button>
                 </div>
             </div>
@@ -791,6 +831,7 @@
     const resetRekapFilterBtn = document.getElementById('resetRekapFilterBtn');
     const infoRekap = document.getElementById('infoRekap');
     const exportRekapExcelBtn = document.getElementById('exportRekapExcelBtn');
+    const printRekapBtn = document.getElementById('printRekapBtn');
 
     // Elemen untuk tambah opsi
     const addSupplierBtn = document.getElementById('addSupplierBtn');
@@ -1181,7 +1222,7 @@
     }
 
     // ========== REKAP BARANG (per Nama & Satuan) ==========
-    function renderRekap() {
+    function getCurrentRekapData() {
         // Group by namaBarang + satuan
         const rekapData = new Map(); // key: "namaBarang||satuan"
         
@@ -1222,8 +1263,14 @@
         // Urutkan berdasarkan nama barang
         rekapArray.sort((a, b) => a.namaBarang.localeCompare(b.namaBarang));
         
+        return rekapArray;
+    }
+
+    function renderRekap() {
+        const rekapArray = getCurrentRekapData();
+        
         rekapCount.textContent = `${rekapArray.length} jenis barang`;
-        infoRekap.textContent = `📊 Menampilkan ${rekapArray.length} jenis barang dari ${rekapData.size} total (berdasarkan Nama & Satuan)`;
+        infoRekap.textContent = `📊 Menampilkan ${rekapArray.length} jenis barang (berdasarkan Nama & Satuan)`;
         
         if (rekapArray.length === 0) {
             rekapBody.innerHTML = '<tr class="empty-row"><td colspan="6">⚡ Tidak ada data barang.</td></tr>';
@@ -1260,6 +1307,67 @@
         rekapFilterText.value = '';
         rekapFilterKategori.value = '';
         renderRekap();
+    }
+    
+    function printRekapData() {
+        const rekapArray = getCurrentRekapData();
+        if (rekapArray.length === 0) { alert('Tidak ada data rekap untuk dicetak'); return; }
+        
+        let rowsHtml = '';
+        rekapArray.forEach((item, idx) => {
+            const detailList = item.details.map(d => {
+                return `${formatDate(d.tanggal)}: ${d.jumlah.toLocaleString()} ${item.satuan} (${d.supplier})${d.catatan ? ' - ' + d.catatan : ''}`;
+            }).join('\n');
+            
+            rowsHtml += `<tr>
+                <td>${idx + 1}</td>
+                <td>${escapeHtml(item.namaBarang)}</td>
+                <td>${escapeHtml(item.kategori)}</td>
+                <td>${escapeHtml(item.satuan)}</td>
+                <td style="text-align:right">${item.total.toLocaleString()}</td>
+                <td>${detailList || '-'}</td>
+            </tr>`;
+        });
+        
+        const grandTotal = rekapArray.reduce((sum, item) => sum + item.total, 0);
+        
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`<html><head>
+            <title>Laporan Rekap Barang</title>
+            <style>
+                body{font-family:Arial;margin:20px}
+                table{border-collapse:collapse;width:100%}
+                th,td{border:1px solid #aaa;padding:8px;text-align:left}
+                th{background:#eef2f5}
+                .total-row{background:#f1f5f9;font-weight:bold}
+                .text-right{text-align:right}
+            </style>
+        </head><body>
+            <h2>📊 Laporan Rekap Barang</h2>
+            <p>Tanggal cetak: ${new Date().toLocaleString('id-ID')} | Total Jenis Barang: ${rekapArray.length}</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Nama Barang</th>
+                        <th>Kategori</th>
+                        <th>Satuan</th>
+                        <th>Total Jumlah Masuk</th>
+                        <th>Detail Penerimaan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rowsHtml}
+                    <tr class="total-row">
+                        <td colspan="4" style="text-align:right; font-weight:bold;">GRAND TOTAL</td>
+                        <td style="text-align:right; font-weight:bold;">${grandTotal.toLocaleString()}</td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </body></html>`);
+        printWindow.document.close();
+        printWindow.print();
     }
     
     function exportRekapToExcel() {
@@ -1319,6 +1427,7 @@
     rekapFilterKategori.addEventListener('change', renderRekap);
     resetRekapFilterBtn.addEventListener('click', resetRekapFilters);
     exportRekapExcelBtn.addEventListener('click', exportRekapToExcel);
+    printRekapBtn.addEventListener('click', printRekapData);
     
     // Tambah opsi
     addSupplierBtn.addEventListener('click', () => { supplierAddContainer.style.display = 'flex'; newSupplierInput.focus(); });
