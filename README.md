@@ -241,6 +241,15 @@
             color: white;
         }
 
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+            border: none;
+        }
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
         /* Section Data */
         .data-section {
             background: white;
@@ -515,6 +524,56 @@
         .tab-content.active {
             display: block;
         }
+        
+        /* Modal Konfirmasi */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 25px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .modal-content h3 {
+            margin-bottom: 15px;
+            color: #0f2b3d;
+        }
+        .modal-content p {
+            margin-bottom: 20px;
+            color: #475569;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .modal-buttons button {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .modal-confirm {
+            background: #dc2626;
+            color: white;
+        }
+        .modal-cancel {
+            background: #e2e8f0;
+            color: #334155;
+        }
 
         @media (max-width: 640px) {
             body { padding: 12px; }
@@ -687,7 +746,7 @@
                     <tbody id="tableBody">
                         <tr class="empty-row"><td colspan="8">⚡ Belum ada data. Silakan tambah barang masuk.</td></tr>
                     </tbody>
-                </table>
+                职责
             </div>
             <div class="pagination" id="paginationContainer"></div>
         </div>
@@ -703,6 +762,7 @@
                 </div>
                 <div class="aksi-buttons">
                     <button id="exportRekapExcelBtn" class="small-icon-btn">📎 Export Rekap Excel</button>
+                    <button id="resetAllDataBtn" class="small-icon-btn" style="background:#fee2e2; color:#b91c1c;">⚠️ Reset Semua Data</button>
                 </div>
             </div>
 
@@ -733,9 +793,21 @@
                         <tr><th>No</th><th>Nama Barang</th><th>Kategori</th><th>Satuan</th><th>Total Jumlah Masuk</th><th>Detail Penerimaan</th></tr>
                     </thead>
                     <tbody id="rekapBody">
-                        <tr class="empty-row"><td colspan="6">⚡ Belum ada data barang.学</tr>
+                        <tr class="empty-row"><td colspan="6">⚡ Belum ada data barang.</td></tr>
                     </tbody>
-                 </table>
+                  </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Konfirmasi Reset Data -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <h3>⚠️ Peringatan!</h3>
+            <p>Apakah Anda yakin ingin menghapus SEMUA data?<br><strong>Data akan dihapus secara permanen dan tidak dapat dikembalikan!</strong></p>
+            <div class="modal-buttons">
+                <button class="modal-cancel" id="modalCancelBtn">Batal</button>
+                <button class="modal-confirm" id="modalConfirmBtn">Ya, Hapus Semua Data</button>
             </div>
         </div>
     </div>
@@ -791,6 +863,10 @@
     const resetRekapFilterBtn = document.getElementById('resetRekapFilterBtn');
     const infoRekap = document.getElementById('infoRekap');
     const exportRekapExcelBtn = document.getElementById('exportRekapExcelBtn');
+    const resetAllDataBtn = document.getElementById('resetAllDataBtn');
+    const confirmModal = document.getElementById('confirmModal');
+    const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+    const modalCancelBtn = document.getElementById('modalCancelBtn');
 
     // Elemen untuk tambah opsi
     const addSupplierBtn = document.getElementById('addSupplierBtn');
@@ -925,6 +1001,7 @@
 
     function saveData() {
         localStorage.setItem('inventory_barang_masuk', JSON.stringify(inventory));
+        applyFilters();
         renderRekap();
     }
 
@@ -950,6 +1027,16 @@
             if (m === '>') return '&gt;';
             return m;
         });
+    }
+
+    // ========== RESET ALL DATA ==========
+    function resetAllData() {
+        inventory = [];
+        saveData();
+        if (editMode) cancelEdit();
+        applyFilters();
+        renderRekap();
+        showToast('🗑️ Semua data telah dihapus secara permanen', false);
     }
 
     // ========== RIWAYAT ==========
@@ -1292,6 +1379,20 @@
         showToast(`📎 Ekspor rekap barang ke Excel`);
     }
 
+    // ========== MODAL HANDLER ==========
+    function showResetModal() {
+        confirmModal.style.display = 'block';
+    }
+
+    function closeModal() {
+        confirmModal.style.display = 'none';
+    }
+
+    function confirmResetData() {
+        closeModal();
+        resetAllData();
+    }
+
     // ========== TAB NAVIGATION ==========
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1319,6 +1420,14 @@
     rekapFilterKategori.addEventListener('change', renderRekap);
     resetRekapFilterBtn.addEventListener('click', resetRekapFilters);
     exportRekapExcelBtn.addEventListener('click', exportRekapToExcel);
+    resetAllDataBtn.addEventListener('click', showResetModal);
+    
+    // Modal events
+    modalConfirmBtn.addEventListener('click', confirmResetData);
+    modalCancelBtn.addEventListener('click', closeModal);
+    window.addEventListener('click', (e) => {
+        if (e.target === confirmModal) closeModal();
+    });
     
     // Tambah opsi
     addSupplierBtn.addEventListener('click', () => { supplierAddContainer.style.display = 'flex'; newSupplierInput.focus(); });
