@@ -572,7 +572,7 @@
 <div class="app-container">
     <div class="main-header">
         <h1>Sistem Pencatatan Barang Masuk</h1>
-        <p>Input dengan dropdown | Rekap Barang (total per nama barang & satuan) | Export Excel | Cetak Rekap</p>
+        <p>Rekap Barang (total per nama barang & satuan)</p>
     </div>
 
     <!-- FORM TAMBAH / EDIT -->
@@ -889,10 +889,10 @@
 
     function loadMasterData() {
         const storedSuppliers = localStorage.getItem('master_suppliers');
-        masterSuppliers = storedSuppliers ? JSON.parse(storedSuppliers) : ['PT. Maju Jaya', 'CV. Sumber Rezeki', 'UD. Berkah Abadi', 'PT. Indo Makmur'];
+        masterSuppliers = storedSuppliers ? JSON.parse(storedSuppliers) : ['PT. Sungchang indah', 'DWSM'];
         
         const storedBarang = localStorage.getItem('master_barang');
-        masterBarang = storedBarang ? JSON.parse(storedBarang) : ['Kertas A4', 'Tinta Printer', 'Box Kardus', 'Plastik Kemasan', 'Stiker Label'];
+        masterBarang = storedBarang ? JSON.parse(storedBarang) : ['Booklet', 'Trapezoid', 'Display Box'', Stiker']
         
         const storedUnits = localStorage.getItem('master_units');
         if (storedUnits) masterUnits = JSON.parse(storedUnits);
